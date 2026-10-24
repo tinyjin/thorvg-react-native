@@ -6,7 +6,7 @@ sidebar_position: 1
 The components draw with ThorVG without any setup. Render them inside `Canvas`, and the canvas draws its children in order, from back to front.
 
 ```tsx
-import { Canvas, Circle, Rect } from '@thorvg/react-native-thorvg';
+import { Canvas, Circle, Rect } from 'thorvg-react-native';
 
 const Example = () => (
   <Canvas width={300} height={300}>
@@ -111,5 +111,5 @@ A prop overrides what a ref changed the next time that prop changes.
 `BlendMethod`, `FillRule`, `MaskMethod`, `StrokeCap`, `StrokeJoin`, `PathCommand`, `TextWrapMode` and the other WebCanvas enums are exported from the package:
 
 ```ts
-import { MaskMethod, StrokeCap } from '@thorvg/react-native-thorvg';
+import { MaskMethod, StrokeCap } from 'thorvg-react-native';
 ```

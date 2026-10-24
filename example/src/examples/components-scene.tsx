@@ -1,11 +1,5 @@
 import { useEffect, useState } from 'react';
-import {
-  BlendMethod,
-  Canvas,
-  Circle,
-  Rect,
-  Scene,
-} from '@thorvg/react-native-thorvg';
+import { BlendMethod, Canvas, Circle, Rect, Scene } from 'thorvg-react-native';
 
 const Example = () => {
   const [angle, setAngle] = useState(0);

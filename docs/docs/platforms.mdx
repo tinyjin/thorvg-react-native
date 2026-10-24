@@ -20,14 +20,14 @@ iOS supports `'sw'` (the default) and `'wg'` (WebGPU on Metal). Other renderers 
 `'wg'` is not included by default. It links `wgpu-native`, which adds about 5.5 MB to the app binary. To enable it, install the WebGPU package and run `pod install` again:
 
 ```sh
-npm install @thorvg/react-native-thorvg-webgpu
+npm install thorvg-react-native-webgpu
 cd ios && pod install
 ```
 
 With Expo:
 
 ```sh
-npx expo install @thorvg/react-native-thorvg-webgpu
+npx expo install thorvg-react-native-webgpu
 npx expo prebuild --platform ios
 ```
 

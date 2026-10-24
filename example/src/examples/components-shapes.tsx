@@ -8,7 +8,7 @@ import {
   Rect,
   StrokeCap,
   StrokeJoin,
-} from '@thorvg/react-native-thorvg';
+} from 'thorvg-react-native';
 
 const Example = () => (
   <Canvas width={600} height={600}>

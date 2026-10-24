@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { Canvas, useThorVG } from '@thorvg/react-native-thorvg';
+import { Canvas, useThorVG } from 'thorvg-react-native';
 
 const Example = () => {
   const TVG = useThorVG();

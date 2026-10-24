@@ -1,12 +1,12 @@
 {
-  "name": "@thorvg/react-native-thorvg",
+  "name": "thorvg-react-native",
   "version": "0.1.0",
   "description": "ThorVG for React Native powered by @thorvg/webcanvas API running on Android, iOS and web",
   "main": "./lib/module/index.js",
   "types": "./lib/typescript/src/index.d.ts",
   "exports": {
     ".": {
-      "thorvg-react-native-thorvg-source": "./src/index.tsx",
+      "thorvg-react-native-source": "./src/index.tsx",
       "types": "./lib/typescript/src/index.d.ts",
       "default": "./lib/module/index.js"
     },
@@ -36,7 +36,7 @@
     "!**/.*"
   ],
   "scripts": {
-    "example": "yarn workspace @thorvg/react-native-thorvg-example",
+    "example": "yarn workspace thorvg-react-native-example",
     "build:thorvg": "./scripts/build-thorvg.sh",
     "package:binaries": "node scripts/package-binaries.mjs",
     "generate": "node scripts/generate-constants.mjs",
@@ -44,7 +44,7 @@
     "prepare": "node scripts/generate-constants.mjs && bob build",
     "typecheck": "tsc && tsc -p example",
     "lint": "eslint \"**/*.{js,ts,tsx}\"",
-    "docs": "yarn workspace @thorvg/react-native-thorvg-docs start"
+    "docs": "yarn workspace thorvg-react-native-docs start"
   },
   "keywords": [
     "react-native",
@@ -59,12 +59,12 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/tinyjin/react-native-thorvg.git"
+    "url": "git+https://github.com/tinyjin/thorvg-react-native.git"
   },
   "author": "Jinny You <baram991103@gmail.com>",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/tinyjin/react-native-thorvg/issues"
+    "url": "https://github.com/tinyjin/thorvg-react-native/issues"
   },
   "homepage": "https://thorvg.org",
   "publishConfig": {

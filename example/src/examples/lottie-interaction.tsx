@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import type { GestureResponderEvent } from 'react-native';
-import { Canvas, useThorVG } from '@thorvg/react-native-thorvg';
+import { Canvas, useThorVG } from 'thorvg-react-native';
 
 type Point = { x: number; y: number };
 

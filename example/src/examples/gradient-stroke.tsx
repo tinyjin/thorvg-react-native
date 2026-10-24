@@ -6,7 +6,7 @@ import {
   useThorVG,
   type ColorStop,
   type Shape,
-} from '@thorvg/react-native-thorvg';
+} from 'thorvg-react-native';
 
 const Example = () => {
   const TVG = useThorVG();

@@ -13,7 +13,7 @@ const root = path.resolve(__dirname, '..');
 const config = withMetroConfig(getDefaultConfig(__dirname), {
   root,
   dirname: __dirname,
-  conditions: ['thorvg-react-native-thorvg-source'],
+  conditions: ['thorvg-react-native-source'],
 });
 
 module.exports = config;

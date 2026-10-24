@@ -84,7 +84,7 @@ let updatePriority: number = NoEventPriority;
 const hostContext = {};
 
 const reconciler = Reconciler({
-  rendererPackageName: '@thorvg/react-native-thorvg',
+  rendererPackageName: 'thorvg-react-native',
   rendererVersion: '1',
   supportsMutation: true,
   supportsPersistence: false,

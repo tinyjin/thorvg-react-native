@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { LottieView, type LottieMode } from '@thorvg/react-native-thorvg';
+import { LottieView, type LottieMode } from 'thorvg-react-native';
 
 const modes: { value: LottieMode; label: string }[] = [
   { value: 'forward', label: 'Forward' },

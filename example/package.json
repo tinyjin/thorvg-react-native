@@ -1,5 +1,5 @@
 {
-  "name": "@thorvg/react-native-thorvg-example",
+  "name": "thorvg-react-native-example",
   "version": "1.0.0",
   "main": "index.js",
   "dependencies": {

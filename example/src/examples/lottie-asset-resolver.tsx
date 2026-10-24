@@ -1,7 +1,7 @@
 // Native example: LottieAssetResolver.cpp
 
 import { useEffect, useRef } from 'react';
-import { Canvas, useThorVG, type Picture } from '@thorvg/react-native-thorvg';
+import { Canvas, useThorVG, type Picture } from 'thorvg-react-native';
 
 const Example = () => {
   const TVG = useThorVG();

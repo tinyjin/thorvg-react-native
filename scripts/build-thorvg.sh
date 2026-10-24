@@ -148,7 +148,7 @@ simulator_sdk = '$simulator'" "$simd" cpu,wg lottie_exp -Dpkg_config_path="$BUIL
     -output "$LIBS/ios/thorvg.xcframework" > /dev/null
   echo "$VERSION" > "$LIBS/ios/VERSION"
 
-  # Stands in for wgpu-native when @thorvg/react-native-thorvg-webgpu is not installed, so the
+  # Stands in for wgpu-native when thorvg-react-native-webgpu is not installed, so the
   # wg engine inside libthorvg links even without dead stripping. Never called: wg stays disabled.
   local stub="$BUILD/wgpu-stub"
   rm -rf "$stub"
@@ -164,7 +164,7 @@ simulator_sdk = '$simulator'" "$simd" cpu,wg lottie_exp -Dpkg_config_path="$BUIL
     -library "$stub/simulator/libwgpu_stub.a" \
     -output "$LIBS/ios/wgpu-stub.xcframework" > /dev/null
 
-  # wgpu-native is linked only when @thorvg/react-native-thorvg-webgpu is installed.
+  # wgpu-native is linked only when thorvg-react-native-webgpu is installed.
   local wgpu="$BUILD/wgpu-stage"
   rm -rf "$wgpu"
   mkdir -p "$wgpu/simulator" "$wgpu/include"

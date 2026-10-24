@@ -4,7 +4,7 @@ slug: /getting-started
 sidebar_position: 1
 ---
 
-`@thorvg/react-native-thorvg` brings [ThorVG](https://github.com/thorvg/thorvg) vector graphics and Lottie to React Native on Android, iOS and web.
+`thorvg-react-native` brings [ThorVG](https://github.com/thorvg/thorvg) vector graphics and Lottie to React Native on Android, iOS and web.
 
 Draw with React components, or with the [`@thorvg/webcanvas`](https://www.npmjs.com/package/@thorvg/webcanvas) API. The same code draws the same result on every platform.
 
@@ -17,21 +17,21 @@ Draw with React components, or with the [`@thorvg/webcanvas`](https://www.npmjs.
 ## Installation
 
 ```sh
-npm install @thorvg/react-native-thorvg
+npm install thorvg-react-native
 cd ios && pod install
 ```
 
 With Expo:
 
 ```sh
-npx expo install @thorvg/react-native-thorvg
+npx expo install thorvg-react-native
 npx expo prebuild
 ```
 
 ## Your first canvas
 
 ```tsx
-import { Canvas, Rect } from '@thorvg/react-native-thorvg';
+import { Canvas, Rect } from 'thorvg-react-native';
 
 const Example = () => (
   <Canvas width={200} height={160}>
@@ -56,7 +56,7 @@ The same drawing with the [WebCanvas API](./guides/canvas):
 
 ```tsx
 import { useEffect, useRef } from 'react';
-import { Canvas, useThorVG } from '@thorvg/react-native-thorvg';
+import { Canvas, useThorVG } from 'thorvg-react-native';
 
 const Example = () => {
   const TVG = useThorVG();

@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { useThorVG } from '@thorvg/react-native-thorvg';
+import { useThorVG } from 'thorvg-react-native';
 import { examples, type Example } from './examples';
 import { ExampleDetail } from './screens/ExampleDetail';
 import { ExampleList } from './screens/ExampleList';

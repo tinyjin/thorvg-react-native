@@ -6,7 +6,7 @@ import {
   Rect,
   Text,
   TextWrapMode,
-} from '@thorvg/react-native-thorvg';
+} from 'thorvg-react-native';
 
 const Example = () => {
   const [font, setFont] = useState<Uint8Array>();

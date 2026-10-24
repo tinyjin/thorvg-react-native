@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Canvas, Picture, Rect } from '@thorvg/react-native-thorvg';
+import { Canvas, Picture, Rect } from 'thorvg-react-native';
 
 const Example = () => {
   const [svg, setSvg] = useState<string>();

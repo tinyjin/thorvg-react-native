@@ -9,7 +9,7 @@ function resolveWebCanvas() {
       return dirname(createRequire(base).resolve('@thorvg/webcanvas'));
     } catch {}
   }
-  throw new Error('Could not resolve @thorvg/webcanvas. Install @thorvg/react-native-thorvg first.');
+  throw new Error('Could not resolve @thorvg/webcanvas. Install thorvg-react-native first.');
 }
 
 const target = resolve(process.cwd(), process.argv[2] ?? 'public');

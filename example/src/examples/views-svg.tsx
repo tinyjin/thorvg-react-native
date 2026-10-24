@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { SvgView } from '@thorvg/react-native-thorvg';
+import { SvgView } from 'thorvg-react-native';
 
 const badge = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
   <circle cx="50" cy="50" r="46" fill="#2563eb"/>

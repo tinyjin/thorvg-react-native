@@ -1,7 +1,7 @@
 // Native example: ConicGradient.cpp
 
 import { useEffect, useRef } from 'react';
-import { Canvas, useThorVG, type ColorStop } from '@thorvg/react-native-thorvg';
+import { Canvas, useThorVG, type ColorStop } from 'thorvg-react-native';
 
 const Example = () => {
   const TVG = useThorVG();

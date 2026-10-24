@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Canvas, LottieAnimation, Rect } from '@thorvg/react-native-thorvg';
+import { Canvas, LottieAnimation, Rect } from 'thorvg-react-native';
 
 const Example = () => {
   const [data, setData] = useState<string>();

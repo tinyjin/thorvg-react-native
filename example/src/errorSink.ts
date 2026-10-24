@@ -1,4 +1,4 @@
-import type { ErrorHandler } from '@thorvg/react-native-thorvg';
+import type { ErrorHandler } from 'thorvg-react-native';
 
 let sink: ErrorHandler | null = null;
 

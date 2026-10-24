@@ -8,7 +8,7 @@ import {
   type Scene,
   type Shape,
   type Text,
-} from '@thorvg/react-native-thorvg';
+} from 'thorvg-react-native';
 
 const Example = () => {
   const TVG = useThorVG();

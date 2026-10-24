@@ -2,12 +2,12 @@
   "compilerOptions": {
     "rootDir": ".",
     "paths": {
-      "@thorvg/react-native-thorvg": ["./src/index"]
+      "thorvg-react-native": ["./src/index"]
     },
     "allowUnreachableCode": false,
     "allowUnusedLabels": false,
     "customConditions": [
-      "thorvg-react-native-thorvg-source",
+      "thorvg-react-native-source",
       "react-native-strict-api"
     ],
     "esModuleInterop": true,

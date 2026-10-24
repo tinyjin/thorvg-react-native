@@ -13,25 +13,25 @@ if (!version) throw new Error('Could not read the ThorVG version from thorvg/mes
 
 const targets = [
   {
-    name: '@thorvg/react-native-thorvg-ios',
-    directory: 'react-native-thorvg-ios',
-    description: 'Prebuilt ThorVG xcframework for @thorvg/react-native-thorvg',
+    name: 'thorvg-react-native-ios',
+    directory: 'thorvg-react-native-ios',
+    description: 'Prebuilt ThorVG xcframework for thorvg-react-native',
     source: join(libs, 'ios'),
     required: ['thorvg.xcframework/Info.plist', 'wgpu-stub.xcframework/Info.plist', 'VERSION'],
   },
   {
     // Installing this package enables the 'wg' renderer by adding wgpu-native for each platform it ships.
-    name: '@thorvg/react-native-thorvg-webgpu',
-    directory: 'react-native-thorvg-webgpu',
-    description: 'WebGPU renderer for @thorvg/react-native-thorvg',
+    name: 'thorvg-react-native-webgpu',
+    directory: 'thorvg-react-native-webgpu',
+    description: 'WebGPU renderer for thorvg-react-native',
     source: join(libs, 'webgpu'),
     binaryOnly: true,
     required: ['ios/wgpu.xcframework/Info.plist', 'VERSION'],
   },
   {
-    name: '@thorvg/react-native-thorvg-android',
-    directory: 'react-native-thorvg-android',
-    description: 'Prebuilt ThorVG static libraries for @thorvg/react-native-thorvg',
+    name: 'thorvg-react-native-android',
+    directory: 'thorvg-react-native-android',
+    description: 'Prebuilt ThorVG static libraries for thorvg-react-native',
     source: join(libs, 'android'),
     required: [
       'include/thorvg_capi.h',

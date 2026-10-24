@@ -79,7 +79,7 @@ export class Canvas {
       console.warn(
         `ThorVG: the '${preferredRenderer}' renderer is not available, falling back to '${this.#renderer}'.` +
           (Platform.OS === 'ios' && preferredRenderer === 'wg'
-            ? ' Install @thorvg/react-native-thorvg-webgpu and run `pod install`.'
+            ? ' Install thorvg-react-native-webgpu and run `pod install`.'
             : '')
       );
     }

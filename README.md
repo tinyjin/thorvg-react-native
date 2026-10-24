@@ -6,12 +6,12 @@
 
 [ThorVG](https://github.com/thorvg/thorvg) vector graphics and Lottie for React Native on Android, iOS and web.
 
-> Full documentation [here](https://tinyjin.github.io/react-native-thorvg)
+> Full documentation [here](https://tinyjin.github.io/thorvg-react-native)
 
 ## Installation
 
 ```sh
-npm install @thorvg/react-native-thorvg
+npm install thorvg-react-native
 ```
 
 ## Usage
@@ -21,7 +21,7 @@ npm install @thorvg/react-native-thorvg
 Draw with React components (JSX).
 
 ```tsx
-import { Canvas, Rect } from '@thorvg/react-native-thorvg';
+import { Canvas, Rect } from 'thorvg-react-native';
 
 const Example = () => (
   <Canvas width={200} height={160}>
@@ -36,7 +36,7 @@ Use the [`@thorvg/webcanvas`](https://www.npmjs.com/package/@thorvg/webcanvas) A
 
 ```tsx
 import { useEffect, useRef } from 'react';
-import { Canvas, useThorVG } from '@thorvg/react-native-thorvg';
+import { Canvas, useThorVG } from 'thorvg-react-native';
 
 const Example = () => {
   const TVG = useThorVG({ renderer: 'sw' });
@@ -64,7 +64,7 @@ const Example = () => {
 ThorVG provides a powerful Lottie runtime. You can play Lottie animations without installing any additional packages.
 
 ```tsx
-import { LottieView } from '@thorvg/react-native-thorvg';
+import { LottieView } from 'thorvg-react-native';
 
 <LottieView
   source={require('./confetti.json')}
@@ -79,7 +79,7 @@ import { LottieView } from '@thorvg/react-native-thorvg';
 SVG support is built into ThorVG. You can load SVG files directly.
 
 ```tsx
-import { SvgView } from '@thorvg/react-native-thorvg';
+import { SvgView } from 'thorvg-react-native';
 
 <SvgView
   source={{ uri: 'https://example.com/logo.svg' }}
@@ -92,25 +92,25 @@ import { SvgView } from '@thorvg/react-native-thorvg';
 The Core API is compatible with [`@thorvg/webcanvas`](https://www.npmjs.com/package/@thorvg/webcanvas). On iOS and Android follow same classes run on the native ThorVG engine through [JSI](https://reactnative.dev/architecture/glossary#javascript-interfaces-jsi).
 
 <p align="center">
-  <img width="600" src="docs/static/img/architecture.svg" alt="react-native-thorvg architecture">
+  <img width="600" src="docs/static/img/architecture.svg" alt="thorvg-react-native architecture">
 </p>
 
 ## Platform Notes
 
 ### Android
 
-The JSI binding calls the ThorVG C API from `@thorvg/react-native-thorvg-android` and draws into the view's Android `Surface`.
+The JSI binding calls the ThorVG C API from `thorvg-react-native-android` and draws into the view's Android `Surface`.
 
 - Canvases render into a `TextureView` by default.
 - Android supports `'gl'` (OpenGL ES) and `'sw'`.
 
 ### iOS
 
-The JSI binding calls the ThorVG C API from `@thorvg/react-native-thorvg-ios` and draws into the view's `CAMetalLayer`.
+The JSI binding calls the ThorVG C API from `thorvg-react-native-ios` and draws into the view's `CAMetalLayer`.
 
 - Run `pod install` in your `ios` directory after installing the package.
 - iOS supports `'sw'` and `'wg'` (WebGPU on Metal).
-- To enable WebGPU, install `@thorvg/react-native-thorvg-webgpu`, then run `pod install` again.
+- To enable WebGPU, install `thorvg-react-native-webgpu`, then run `pod install` again.
 
 ### Web
 
@@ -121,7 +121,7 @@ useThorVG({ locateFile: (path) => 'https://example.com/path/to/' + path.split('/
 ```
 
 - `init()` option `locateFile` only applies on web.
-- `threads` needs the COOP/COEP headers on web. See [Threads](https://tinyjin.github.io/react-native-thorvg/platforms#threads).
+- `threads` needs the COOP/COEP headers on web. See [Threads](https://tinyjin.github.io/thorvg-react-native/platforms#threads).
 - Web supports `'sw'`, `'gl'`, and `'wg'` as default
 
 ## Development

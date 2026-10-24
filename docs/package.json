@@ -1,5 +1,5 @@
 {
-  "name": "@thorvg/react-native-thorvg-docs",
+  "name": "thorvg-react-native-docs",
   "version": "0.0.0",
   "private": true,
   "scripts": {

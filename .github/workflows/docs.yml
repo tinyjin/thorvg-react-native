@@ -26,7 +26,7 @@ jobs:
         uses: ./.github/actions/setup
 
       - name: Build docs
-        run: yarn workspace @thorvg/react-native-thorvg-docs build
+        run: yarn workspace thorvg-react-native-docs build
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v5

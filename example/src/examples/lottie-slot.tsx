@@ -7,7 +7,7 @@ import {
   type LottieAnimation,
   type Paint,
   type Picture,
-} from '@thorvg/react-native-thorvg';
+} from 'thorvg-react-native';
 
 const Example = () => {
   const TVG = useThorVG();

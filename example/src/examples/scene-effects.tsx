@@ -1,7 +1,7 @@
 // Native example: SceneEffects.cpp
 
 import { useEffect, useRef } from 'react';
-import { Canvas, useThorVG, type Scene } from '@thorvg/react-native-thorvg';
+import { Canvas, useThorVG, type Scene } from 'thorvg-react-native';
 
 const Example = () => {
   const TVG = useThorVG();

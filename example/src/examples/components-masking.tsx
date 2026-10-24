@@ -6,7 +6,7 @@ import {
   MaskMethod,
   Rect,
   Scene,
-} from '@thorvg/react-native-thorvg';
+} from 'thorvg-react-native';
 
 const stripes = Array.from({ length: 12 }, (_, i) => i * 50);
 

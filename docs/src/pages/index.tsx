@@ -5,7 +5,7 @@ import Heading from '@theme/Heading';
 import Layout from '@theme/Layout';
 import styles from './index.module.css';
 
-const snippet = `import { Canvas, Circle, LottieAnimation, Rect } from '@thorvg/react-native-thorvg';
+const snippet = `import { Canvas, Circle, LottieAnimation, Rect } from 'thorvg-react-native';
 
 const Example = () => (
   <Canvas width={300} height={300}>
