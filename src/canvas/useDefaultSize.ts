@@ -32,6 +32,7 @@ export function useDefaultSize(
     {
       width: '100%',
       maxWidth: size.width,
+      maxHeight: size.height,
       aspectRatio: size.width / size.height,
     },
     style,
