@@ -17117,8 +17117,8 @@ __metadata:
     turbo: "npm:^2.11.10"
     typescript: "npm:^6.0.3"
   peerDependencies:
-    react: "*"
-    react-native: "*"
+    react: ">=19"
+    react-native: ">=0.78"
   bin:
     setup-thorvg-web: scripts/setup-thorvg-web.mjs
   languageName: unknown

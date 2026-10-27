@@ -128,7 +128,7 @@ useThorVG({ locateFile: (path) => 'https://example.com/path/to/' + path.split('/
 
 ### Requirements
 
-- React Native with the New Architecture
+- React Native 0.78+ (New Architecture)
 - iOS 15.1+
 - Android API 24+
 - Node 24.15+
