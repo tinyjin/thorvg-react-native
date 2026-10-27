@@ -41,7 +41,7 @@
     "example": "yarn workspace thorvg-react-native-example",
     "build:thorvg": "./scripts/build-thorvg.sh",
     "package:binaries": "node scripts/package-binaries.mjs",
-    "prepack": "node scripts/check-binaries.mjs",
+    "prepack": "node scripts/check-binaries.mjs && yarn prepare",
     "generate": "node scripts/generate-constants.mjs",
     "clean": "del-cli lib android/build android/.cxx example/android/build example/android/app/build example/ios/build",
     "prepare": "node scripts/generate-constants.mjs && bob build",
