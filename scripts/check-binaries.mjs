@@ -23,6 +23,7 @@ const version = execFileSync('git', ['-C', join(root, 'thorvg'), 'describe', '--
 }).trim();
 
 const errors = [];
+if (!existsSync(join(libs, 'LICENSE'))) errors.push('libs: missing LICENSE');
 for (const [platform, files] of Object.entries(required)) {
   const missing = files.filter((file) => !existsSync(join(libs, platform, file)));
   if (missing.length) {

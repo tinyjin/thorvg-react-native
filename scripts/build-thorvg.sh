@@ -187,4 +187,5 @@ case "$TARGET" in
   all) build_android; build_ios ;;
   *) echo "Usage: $0 [android|ios|all]" >&2; exit 1 ;;
 esac
+cp "$THORVG/LICENSE" "$LIBS/LICENSE"
 echo "Done: $LIBS"
