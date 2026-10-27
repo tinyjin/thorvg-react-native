@@ -1,6 +1,6 @@
 # ThorVG for React Native
 
-[ThorVG](https://github.com/thorvg/thorvg) vector graphics and Lottie for React Native on Android, iOS and web.
+High-performance vector graphics and Lottie rendering on Android, iOS and web, powered by [ThorVG](https://github.com/thorvg/thorvg).
 
 > Full documentation [here](https://tinyjin.github.io/thorvg-react-native)
 

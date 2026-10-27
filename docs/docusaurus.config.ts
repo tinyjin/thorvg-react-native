@@ -8,7 +8,7 @@ const WEBCANVAS_API = 'https://thorvg.github.io/thorvg.web/';
 const config: Config = {
   title: 'ThorVG for React Native',
   tagline:
-    'High-performance vector graphics rendering and Lottie on Android, iOS and web.',
+    'High-performance vector graphics and Lottie rendering on Android, iOS and web.',
   favicon: 'img/favicon.png',
 
   future: {
