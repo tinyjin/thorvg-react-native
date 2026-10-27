@@ -1,9 +1,5 @@
 # ThorVG for React Native
 
-<p align="center">
-  <img width="550" height="auto" src="https://github.com/thorvg/thorvg.site/blob/main/readme/logo/animated_brand.svg">
-</p>
-
 [ThorVG](https://github.com/thorvg/thorvg) vector graphics and Lottie for React Native on Android, iOS and web.
 
 > Full documentation [here](https://tinyjin.github.io/thorvg-react-native)
@@ -126,7 +122,7 @@ useThorVG({ locateFile: (path) => 'https://example.com/path/to/' + path.split('/
 
 ## Development
 
-### Requirements
+### Prerequisites
 
 - React Native 0.78+ (New Architecture)
 - iOS 15.1+
@@ -139,6 +135,8 @@ useThorVG({ locateFile: (path) => 'https://example.com/path/to/' + path.split('/
 ```sh
 git submodule update --init
 yarn
-yarn build:thorvg            # prebuilt ThorVG into libs/ (needs meson, ninja, pkg-config, Xcode, Android NDK)
+yarn build:thorvg            # prebuilt ThorVG into `libs` (needs meson, ninja, pkg-config, Xcode, Android NDK)
 yarn example ios             # or: yarn example android, yarn example web
 ```
+
+> More examples [here](https://tinyjin.github.io/thorvg-react-native/examples)
