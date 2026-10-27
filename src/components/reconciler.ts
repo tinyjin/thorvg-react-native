@@ -184,7 +184,7 @@ const reconciler = Reconciler({
 export interface Root {
   render(children: ReactNode): void;
   invalidate(): void;
-  unmount(): void;
+  unmount(onDone: () => void): void;
 }
 
 export function createRoot(TVG: ThorVG, canvas: Canvas): Root {
@@ -211,8 +211,8 @@ export function createRoot(TVG: ThorVG, canvas: Canvas): Root {
     invalidate() {
       container.requestRender();
     },
-    unmount() {
-      reconciler.updateContainer(null, fiber, null, () => {});
+    unmount(onDone) {
+      reconciler.updateContainer(null, fiber, null, onDone);
     },
   };
 }

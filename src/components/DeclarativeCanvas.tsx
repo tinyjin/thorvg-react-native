@@ -63,8 +63,7 @@ export function DeclarativeCanvas({
     scene.current = { root, canvas };
     return () => {
       scene.current = null;
-      root.unmount();
-      canvas.destroy();
+      root.unmount(() => canvas.destroy());
     };
   }, [TVG, enableDevicePixelRatio, engineOption, sized]);
 
