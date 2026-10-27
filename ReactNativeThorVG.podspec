@@ -15,7 +15,7 @@ unless File.exist?(File.join(thorvg_libs, "thorvg.xcframework"))
 end
 
 unless File.exist?(File.join(thorvg_libs, "thorvg.xcframework"))
-  raise "ReactNativeThorVG: thorvg.xcframework not found. Run `yarn build:thorvg ios` or install thorvg-react-native-ios."
+  raise "ReactNativeThorVG: thorvg.xcframework not found. Run `yarn build:thorvg ios`."
 end
 
 vendored = File.join(__dir__, "libs", "ios")

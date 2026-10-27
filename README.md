@@ -95,18 +95,18 @@ The Core API is compatible with [`@thorvg/webcanvas`](https://www.npmjs.com/pack
 
 ### Android
 
-The JSI binding calls the ThorVG C API from `thorvg-react-native-android` and draws into the view's Android `Surface`.
+The JSI binding calls the ThorVG C API and draws into the view's Android `Surface`.
 
 - Canvases render into a `TextureView` by default.
 - Android supports `'gl'` (OpenGL ES) and `'sw'`.
 
 ### iOS
 
-The JSI binding calls the ThorVG C API from `thorvg-react-native-ios` and draws into the view's `CAMetalLayer`.
+The JSI binding calls the ThorVG C API and draws into the view's `CAMetalLayer`.
 
 - Run `pod install` in your `ios` directory after installing the package.
-- iOS supports `'sw'` and `'wg'` (WebGPU on Metal).
-- To enable WebGPU, install `thorvg-react-native-webgpu`, then run `pod install` again.
+- iOS supports `'sw'` and `'wg'` (WebGPU on Metal, experimental).
+- WebGPU is not included in the published package. See [WebGPU Support](https://tinyjin.github.io/thorvg-react-native/docs/platforms#webgpu-support).
 
 ### Web
 
@@ -117,8 +117,8 @@ useThorVG({ locateFile: (path) => 'https://example.com/path/to/' + path.split('/
 ```
 
 - `init()` option `locateFile` only applies on web.
-- `threads` needs the COOP/COEP headers on web. See [Threads](https://tinyjin.github.io/thorvg-react-native/platforms#threads).
-- Web supports `'sw'`, `'gl'`, and `'wg'` as default
+- `threads` needs the COOP/COEP headers on web. See [Threads](https://tinyjin.github.io/thorvg-react-native/docs/platforms#threads).
+- Web supports `'sw'`, `'gl'`, and `'wg'` (All renderers)
 
 ## Development
 

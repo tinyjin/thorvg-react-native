@@ -27,7 +27,7 @@ def resolveThorVGLibs() {
   if (core != null && new File(core, "libs/include/thorvg_capi.h").exists()) {
     return "${core}/libs"
   }
-  throw new GradleException("ReactNativeThorVG: prebuilt ThorVG not found. Run `yarn build:thorvg android` or install thorvg-react-native-android.")
+  throw new GradleException("ReactNativeThorVG: prebuilt ThorVG not found. Run `yarn build:thorvg android`.")
 }
 
 def reactNativeArchitectures() {

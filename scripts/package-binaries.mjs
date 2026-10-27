@@ -44,9 +44,14 @@ const targets = [
   },
 ];
 
+const only = process.argv.slice(2);
+const selected = only.length
+  ? targets.filter((target) => only.some((platform) => target.directory.endsWith(`-${platform}`)))
+  : targets;
+
 rmSync(output, { recursive: true, force: true });
 
-for (const target of targets) {
+for (const target of selected) {
   for (const file of target.required) {
     if (!existsSync(join(target.source, file))) {
       throw new Error(`${target.name}: missing ${file}. Run yarn build:thorvg first.`);
