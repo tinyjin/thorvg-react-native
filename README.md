@@ -1,6 +1,7 @@
 # ThorVG for React Native
 
 [![npm](https://img.shields.io/npm/v/thorvg-react-native)](https://www.npmjs.com/package/thorvg-react-native)
+[![CI](https://github.com/tinyjin/thorvg-react-native/actions/workflows/ci.yml/badge.svg)](https://github.com/tinyjin/thorvg-react-native/actions/workflows/ci.yml)
 
 High-performance vector graphics and Lottie rendering on Android, iOS and web, powered by [ThorVG](https://github.com/thorvg/thorvg).
 
