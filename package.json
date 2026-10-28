@@ -69,7 +69,7 @@
   "bugs": {
     "url": "https://github.com/tinyjin/thorvg-react-native/issues"
   },
-  "homepage": "https://github.com/tinyjin/thorvg-react-native",
+  "homepage": "https://tinyjin.github.io/thorvg-react-native",
   "publishConfig": {
     "registry": "https://registry.npmjs.org/"
   },
