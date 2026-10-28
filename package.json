@@ -1,7 +1,7 @@
 {
   "name": "thorvg-react-native",
   "version": "0.1.0",
-  "description": "High-performance vector graphics and Lottie rendering on Android, iOS and web.",
+  "description": "High-performance vector graphics and Lottie rendering on Android, iOS, and web",
   "main": "./lib/module/index.js",
   "types": "./lib/typescript/src/index.d.ts",
   "exports": {
