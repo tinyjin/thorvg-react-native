@@ -6,6 +6,8 @@
 #include <deque>
 #include <thread>
 
+#include "ThorVGPlayer.h"
+
 namespace thorvg::rn {
 
 #if defined(__APPLE__)
@@ -268,6 +270,11 @@ void CanvasHost::detach() {
   }
 }
 
+void CanvasHost::setVisible(bool visible) {
+  if (visible_.exchange(visible) == visible) return;
+  if (visible) wakePlayers();
+}
+
 void CanvasHost::submitLocked() {
   {
     std::lock_guard<std::mutex> target(present_->mutex);
@@ -337,6 +344,7 @@ void SurfaceRegistry::bindCanvas(int surfaceId, const std::shared_ptr<CanvasHost
   std::lock_guard<std::mutex> lock(mutex_);
   auto& entry = entries_[surfaceId];
   entry.canvas = canvas;
+  canvas->setVisible(entry.visible);
   if (entry.surface) canvas->attach(entry.surface);
 }
 
@@ -348,6 +356,19 @@ void SurfaceRegistry::unbindCanvas(int surfaceId, const CanvasHost* canvas) {
   if (current && current.get() != canvas) return;
   it->second.canvas.reset();
   prune(surfaceId);
+}
+
+void SurfaceRegistry::setVisible(int surfaceId, bool visible) {
+  std::shared_ptr<CanvasHost> canvas;
+  {
+    std::lock_guard<std::mutex> lock(mutex_);
+    auto it = entries_.find(surfaceId);
+    if (it == entries_.end() && visible) return;
+    auto& entry = it == entries_.end() ? entries_[surfaceId] : it->second;
+    entry.visible = visible;
+    canvas = entry.canvas.lock();
+  }
+  if (canvas) canvas->setVisible(visible);
 }
 
 void SurfaceRegistry::prune(int surfaceId) {

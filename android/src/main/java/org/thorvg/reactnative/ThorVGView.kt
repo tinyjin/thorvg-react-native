@@ -2,12 +2,17 @@ package org.thorvg.reactnative
 
 import android.content.Context
 import android.graphics.PixelFormat
+import android.graphics.Rect
 import android.graphics.SurfaceTexture
 import android.view.Surface
 import android.view.SurfaceHolder
 import android.view.SurfaceView
 import android.view.TextureView
 import android.view.View
+import android.view.ViewGroup
+import android.view.ViewTreeObserver
+import android.widget.HorizontalScrollView
+import android.widget.ScrollView
 import com.facebook.react.views.view.ReactViewGroup
 
 class ThorVGView(context: Context) : ReactViewGroup(context) {
@@ -17,6 +22,14 @@ class ThorVGView(context: Context) : ReactViewGroup(context) {
   private var surface: Surface? = null
   private var ownsSurface = false
   private var attached = false
+  private var visible = true
+  private val visibleRect = Rect()
+  private val clipRect = Rect()
+  private val location = IntArray(2)
+  private val drawListener = ViewTreeObserver.OnPreDrawListener {
+    updateVisibility()
+    true
+  }
 
   init {
     rebuild()
@@ -27,6 +40,8 @@ class ThorVGView(context: Context) : ReactViewGroup(context) {
     detachSurface()
     surfaceId = value
     attachSurface()
+    visible = computeVisibility()
+    reportVisibility()
   }
 
   fun setBackingView(value: String?) {
@@ -42,6 +57,23 @@ class ThorVGView(context: Context) : ReactViewGroup(context) {
     surfaceId = 0
   }
 
+  override fun onAttachedToWindow() {
+    super.onAttachedToWindow()
+    viewTreeObserver.addOnPreDrawListener(drawListener)
+    updateVisibility()
+  }
+
+  override fun onDetachedFromWindow() {
+    viewTreeObserver.removeOnPreDrawListener(drawListener)
+    super.onDetachedFromWindow()
+    updateVisibility()
+  }
+
+  override fun onVisibilityAggregated(isVisible: Boolean) {
+    super.onVisibilityAggregated(isVisible)
+    updateVisibility()
+  }
+
   override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
     val width = right - left
     val height = bottom - top
@@ -52,6 +84,38 @@ class ThorVGView(context: Context) : ReactViewGroup(context) {
       )
       it.layout(0, 0, width, height)
     }
+  }
+
+  private fun updateVisibility() {
+    val value = computeVisibility()
+    if (value == visible) return
+    visible = value
+    reportVisibility()
+  }
+
+  private fun computeVisibility() = isShown && windowVisibility == VISIBLE && isOnScreen()
+
+  private fun isOnScreen(): Boolean {
+    if (width == 0 || height == 0) return false
+    windowRect(this, visibleRect)
+    var parent = parent
+    while (parent is ViewGroup) {
+      if (parent is ScrollView || parent is HorizontalScrollView || parent.clipChildren) {
+        windowRect(parent, clipRect)
+        if (!visibleRect.intersect(clipRect)) return false
+      }
+      parent = parent.parent
+    }
+    return true
+  }
+
+  private fun windowRect(view: View, rect: Rect) {
+    view.getLocationInWindow(location)
+    rect.set(location[0], location[1], location[0] + view.width, location[1] + view.height)
+  }
+
+  private fun reportVisibility() {
+    if (surfaceId != 0) ThorVGSurfaces.setVisible(surfaceId, visible)
   }
 
   private fun rebuild() {

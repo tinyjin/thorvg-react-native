@@ -37,6 +37,7 @@ struct ThorVGSurfaces : jni::JavaClass<ThorVGSurfaces> {
     javaClassLocal()->registerNatives({
         makeNativeMethod("nativeAttach", "(ILandroid/view/Surface;)V", ThorVGSurfaces::attach),
         makeNativeMethod("nativeDetach", ThorVGSurfaces::detach),
+        makeNativeMethod("nativeSetVisible", ThorVGSurfaces::setVisible),
     });
   }
 
@@ -47,6 +48,10 @@ struct ThorVGSurfaces : jni::JavaClass<ThorVGSurfaces> {
   }
 
   static void detach(jni::alias_ref<jclass>, jint surfaceId) { SurfaceRegistry::shared().detachSurface(surfaceId); }
+
+  static void setVisible(jni::alias_ref<jclass>, jint surfaceId, jboolean visible) {
+    SurfaceRegistry::shared().setVisible(surfaceId, visible);
+  }
 };
 
 }

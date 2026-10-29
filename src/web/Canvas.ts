@@ -18,6 +18,10 @@ const elements = new WeakMap<WebCanvas, unknown>();
 const subscriptions = new WeakMap<WebCanvas, () => void>();
 const targets = new WeakMap<WebCanvas, CanvasTarget>();
 
+export function canvasElement(canvas: WebCanvas): unknown {
+  return elements.get(canvas);
+}
+
 function fit(element: unknown): void {
   const style = (element as { style?: Record<string, string> } | null)?.style;
   if (!style) return;

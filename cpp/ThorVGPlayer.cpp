@@ -1,6 +1,8 @@
 #include "ThorVGPlayer.h"
 
 #include <algorithm>
+#include <atomic>
+#include <mutex>
 #include <vector>
 
 #include "ThorVGTicker.h"
@@ -14,14 +16,29 @@ std::vector<std::shared_ptr<Player>>& active() {
   return players;
 }
 
+std::atomic<bool> installed{false};
+std::atomic<uint64_t> wakeups{0};
+
+std::mutex& tickerMutex() {
+  static std::mutex mutex;
+  return mutex;
+}
+
 void tickAll(double now) {
   std::lock_guard<std::recursive_mutex> lock(engineMutex());
+  auto epoch = wakeups.load();
   auto players = active();
-  for (auto& player : players) player->tick(now);
+  auto running = false;
+  for (auto& player : players) {
+    running = running || player->visible();
+    player->tick(now);
+  }
+  if (running) return;
+  std::lock_guard<std::mutex> ticker(tickerMutex());
+  if (wakeups == epoch) setTickerActive(false);
 }
 
 void activate(const std::shared_ptr<Player>& player) {
-  static bool installed = false;
   if (!installed) {
     setTicker(tickAll);
     installed = true;
@@ -38,6 +55,13 @@ void deactivate(const Player* player) {
   if (players.empty()) setTickerActive(false);
 }
 
+}
+
+void wakePlayers() {
+  if (!installed) return;
+  std::lock_guard<std::mutex> lock(tickerMutex());
+  ++wakeups;
+  setTickerActive(true);
 }
 
 Player::Player(std::shared_ptr<CanvasHost> host, Tvg_Animation animation) : host_(host), animation_(animation) {}
@@ -88,8 +112,17 @@ void Player::destroy() {
   listener_ = nullptr;
 }
 
+bool Player::visible() const {
+  auto host = host_.lock();
+  return !host || host->visible();
+}
+
 void Player::tick(double now) {
   if (!playing_ || !animation_) return;
+  if (!visible()) {
+    last_ = 0;
+    return;
+  }
   float total = 0, duration = 0;
   tvg_animation_get_total_frame(animation_, &total);
   tvg_animation_get_duration(animation_, &duration);

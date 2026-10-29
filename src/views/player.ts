@@ -1,4 +1,5 @@
 import type { Canvas as WebCanvas, LottieAnimation } from '@thorvg/webcanvas';
+import { canvasElement } from '../web/Canvas';
 
 export type PlayMode = 'forward' | 'reverse' | 'bounce' | 'reverse-bounce';
 
@@ -28,6 +29,24 @@ export interface Player {
   destroy(): void;
 }
 
+interface VisibilityDocument {
+  visibilityState: string;
+  addEventListener(type: 'visibilitychange', listener: () => void): void;
+  removeEventListener(type: 'visibilitychange', listener: () => void): void;
+}
+
+interface VisibilityObserver {
+  observe(element: unknown): void;
+  disconnect(): void;
+}
+
+const browser = globalThis as {
+  document?: VisibilityDocument;
+  IntersectionObserver?: new (
+    callback: (entries: { isIntersecting: boolean }[]) => void
+  ) => VisibilityObserver;
+};
+
 export function createPlayer(
   canvas: WebCanvas,
   animation: LottieAnimation
@@ -46,6 +65,36 @@ export function createPlayer(
   let playing = false;
   let rafId = 0;
   let last = 0;
+  let onScreen = true;
+  let documentVisible = browser.document?.visibilityState !== 'hidden';
+
+  const visible = () => onScreen && documentVisible;
+  const schedule = () => {
+    if (!playing || rafId || !visible()) return;
+    last = 0;
+    rafId = requestAnimationFrame(tick);
+  };
+  const suspend = () => {
+    cancelAnimationFrame(rafId);
+    rafId = 0;
+  };
+  const refresh = () => (visible() ? schedule() : suspend());
+
+  const element = canvasElement(canvas);
+  let observer: VisibilityObserver | null = null;
+  if (element && browser.IntersectionObserver) {
+    observer = new browser.IntersectionObserver((entries) => {
+      const entry = entries[entries.length - 1];
+      if (entry) onScreen = entry.isIntersecting;
+      refresh();
+    });
+    observer.observe(element);
+  }
+  const onVisibilityChange = () => {
+    documentVisible = browser.document?.visibilityState !== 'hidden';
+    refresh();
+  };
+  browser.document?.addEventListener('visibilitychange', onVisibilityChange);
 
   const draw = () => {
     animation.frame(frame);
@@ -54,7 +103,8 @@ export function createPlayer(
   };
 
   const tick = (time: number) => {
-    if (!playing) return;
+    rafId = 0;
+    if (!playing || !visible()) return;
     const { loop, speed, mode, start, end } = config;
     const elapsed = last ? (time - last) / 1000 : 0;
     last = time;
@@ -95,12 +145,11 @@ export function createPlayer(
     play() {
       if (playing) return;
       playing = true;
-      last = 0;
-      rafId = requestAnimationFrame(tick);
+      schedule();
     },
     pause() {
       playing = false;
-      cancelAnimationFrame(rafId);
+      suspend();
     },
     reset() {
       const reverse =
@@ -117,6 +166,11 @@ export function createPlayer(
     playing: () => playing,
     destroy() {
       player.pause();
+      observer?.disconnect();
+      browser.document?.removeEventListener(
+        'visibilitychange',
+        onVisibilityChange
+      );
       events = {};
     },
   };

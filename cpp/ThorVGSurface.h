@@ -1,5 +1,6 @@
 #pragma once
 
+#include <atomic>
 #include <cstdint>
 #include <functional>
 #include <memory>
@@ -52,6 +53,8 @@ class CanvasHost : public std::enable_shared_from_this<CanvasHost> {
   int surfaceId() const { return surfaceId_; }
   bool valid() const { return canvas_ != nullptr; }
   Renderer renderer() const { return gpu_ ? gpu_->renderer() : Renderer::Sw; }
+  bool visible() const { return visible_; }
+  void setVisible(bool visible);
 
   Tvg_Result resize(uint32_t width, uint32_t height);
   Tvg_Result render();
@@ -83,6 +86,7 @@ class CanvasHost : public std::enable_shared_from_this<CanvasHost> {
   std::shared_ptr<Surface> bound_;
   std::shared_ptr<PresentTarget> present_;
   int surfaceId_;
+  std::atomic<bool> visible_{true};
 };
 
 class SurfaceRegistry {
@@ -93,11 +97,13 @@ class SurfaceRegistry {
   void detachSurface(int surfaceId);
   void bindCanvas(int surfaceId, const std::shared_ptr<CanvasHost>& canvas);
   void unbindCanvas(int surfaceId, const CanvasHost* canvas);
+  void setVisible(int surfaceId, bool visible);
 
  private:
   struct Entry {
     std::shared_ptr<Surface> surface;
     std::weak_ptr<CanvasHost> canvas;
+    bool visible = true;
   };
 
   void prune(int surfaceId);

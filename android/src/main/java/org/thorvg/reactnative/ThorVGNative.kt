@@ -24,7 +24,11 @@ internal object ThorVGSurfaces {
 
   fun detach(surfaceId: Int) = nativeDetach(surfaceId)
 
+  fun setVisible(surfaceId: Int, visible: Boolean) = nativeSetVisible(surfaceId, visible)
+
   @JvmStatic @DoNotStrip private external fun nativeAttach(surfaceId: Int, surface: Surface)
 
   @JvmStatic @DoNotStrip private external fun nativeDetach(surfaceId: Int)
+
+  @JvmStatic @DoNotStrip private external fun nativeSetVisible(surfaceId: Int, visible: Boolean)
 }

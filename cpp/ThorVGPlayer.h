@@ -7,6 +7,8 @@
 
 namespace thorvg::rn {
 
+void wakePlayers();
+
 enum class PlayMode { Forward, Reverse, Bounce, ReverseBounce };
 
 // Callers hold engineMutex().
@@ -24,6 +26,7 @@ class Player : public std::enable_shared_from_this<Player> {
   void seek(float frame);
   float frame() const { return frame_; }
   bool playing() const { return playing_; }
+  bool visible() const;
   void destroy();
 
   void tick(double now);
