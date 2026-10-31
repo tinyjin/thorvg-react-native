@@ -8,6 +8,6 @@
 
 namespace thorvg::rn {
 
-std::shared_ptr<Surface> makeMetalSurface(CAMetalLayer *layer);
+std::shared_ptr<Surface> makeLayerSurface(CALayer *layer, CAMetalLayer *metalLayer);
 
 }

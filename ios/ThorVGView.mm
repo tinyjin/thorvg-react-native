@@ -24,13 +24,56 @@ using namespace facebook::react;
 
 @end
 
+@interface ThorVGHostView : UIView
+@property (nonatomic, readonly) CALayer *contentLayer;
+@property (nonatomic, readonly) ThorVGMetalView *metalView;
+@end
+
+@implementation ThorVGHostView
+
+- (instancetype)initWithFrame:(CGRect)frame
+{
+  if (self = [super initWithFrame:frame]) {
+    self.userInteractionEnabled = NO;
+    self.backgroundColor = UIColor.clearColor;
+
+    _contentLayer = [CALayer layer];
+    [self.layer addSublayer:_contentLayer];
+
+    _metalView = [[ThorVGMetalView alloc] initWithFrame:self.bounds];
+    _metalView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+    _metalView.backgroundColor = UIColor.clearColor;
+    _metalView.layer.hidden = YES;
+
+    CAMetalLayer *layer = (CAMetalLayer *)_metalView.layer;
+    layer.device = MTLCreateSystemDefaultDevice();
+    layer.pixelFormat = MTLPixelFormatBGRA8Unorm;
+    layer.framebufferOnly = NO;
+    layer.opaque = NO;
+
+    [self addSubview:_metalView];
+  }
+  return self;
+}
+
+- (void)layoutSubviews
+{
+  [super layoutSubviews];
+  [CATransaction begin];
+  [CATransaction setDisableActions:YES];
+  _contentLayer.frame = self.bounds;
+  [CATransaction commit];
+}
+
+@end
+
 static void *kScrollContext = &kScrollContext;
 
 static NSHashTable *gTracked;
 static NSTimer *gRecheckTimer;
 
 @implementation ThorVGView {
-  ThorVGMetalView *_metalView;
+  ThorVGHostView *_hostView;
   int _surfaceId;
   BOOL _visible;
   BOOL _background;
@@ -70,17 +113,8 @@ static NSTimer *gRecheckTimer;
     static const auto defaultProps = std::make_shared<const ThorVGViewProps>();
     _props = defaultProps;
 
-    _metalView = [[ThorVGMetalView alloc] initWithFrame:self.bounds];
-    _metalView.userInteractionEnabled = NO;
-    _metalView.backgroundColor = UIColor.clearColor;
-
-    CAMetalLayer *layer = (CAMetalLayer *)_metalView.layer;
-    layer.device = MTLCreateSystemDefaultDevice();
-    layer.pixelFormat = MTLPixelFormatBGRA8Unorm;
-    layer.framebufferOnly = NO;
-    layer.opaque = NO;
-
-    self.contentView = _metalView;
+    _hostView = [[ThorVGHostView alloc] initWithFrame:self.bounds];
+    self.contentView = _hostView;
 
     _visible = YES;
     _background = UIApplication.sharedApplication.applicationState == UIApplicationStateBackground;
@@ -214,8 +248,8 @@ static NSTimer *gRecheckTimer;
 - (void)attachSurface
 {
   if (_surfaceId == 0) return;
-  thorvg::rn::SurfaceRegistry::shared().attachSurface(_surfaceId,
-                                                      thorvg::rn::makeMetalSurface((CAMetalLayer *)_metalView.layer));
+  thorvg::rn::SurfaceRegistry::shared().attachSurface(
+      _surfaceId, thorvg::rn::makeLayerSurface(_hostView.contentLayer, (CAMetalLayer *)_hostView.metalView.layer));
   _visible = [self isOnScreen];
   [self reportVisibility];
 }

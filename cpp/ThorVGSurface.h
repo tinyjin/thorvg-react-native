@@ -35,6 +35,7 @@ class Gpu {
 };
 
 Gpu* platformGpu();
+void flushPresented();
 
 void setScheduler(std::function<void(std::function<void()>)> scheduler);
 void runOnJS(std::function<void()> task);

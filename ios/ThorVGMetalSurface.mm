@@ -1,19 +1,18 @@
 #import "ThorVGMetalSurface.h"
 
-#import <Metal/Metal.h>
 #if THORVG_RN_WEBGPU
 #import <webgpu/webgpu.h>
 #endif
 
-#include <algorithm>
+#import <CoreVideo/CVPixelBuffer.h>
+#import <IOSurface/IOSurfaceRef.h>
+
 #include <array>
 #include <cstring>
 
 namespace thorvg::rn {
 
 namespace {
-
-constexpr size_t kFramesInFlight = 3;
 
 #if THORVG_RN_WEBGPU
 class WgGpu final : public Gpu {
@@ -85,25 +84,33 @@ class WgGpu final : public Gpu {
 };
 #endif
 
-class MetalSurface final : public Surface {
+class LayerSurface final : public Surface {
  public:
-  explicit MetalSurface(CAMetalLayer *layer)
-      : layer_(layer),
-        queue_([layer.device newCommandQueue]),
-        inflight_(dispatch_semaphore_create(kFramesInFlight)) {}
+  LayerSurface(CALayer *layer, CAMetalLayer *metalLayer) : layer_(layer), metalLayer_(metalLayer)
+  {
+    layer_.actions = @{@"contents" : [NSNull null]};
+  }
 
 #if THORVG_RN_WEBGPU
-  ~MetalSurface() override
+  ~LayerSurface() override
   {
     if (wgSurface_) wgpuSurfaceRelease(wgSurface_);
   }
+#endif
 
+#if THORVG_RN_WEBGPU
   Tvg_Result target(Tvg_Canvas canvas, uint32_t width, uint32_t height) override
   {
     auto *gpu = WgGpu::shared();
     if (!gpu) return TVG_RESULT_NOT_SUPPORTED;
-    if (!wgSurface_) wgSurface_ = gpu->createSurface(layer_);
-    if (!wgSurface_) return TVG_RESULT_INSUFFICIENT_CONDITION;
+    if (!wgSurface_) {
+      wgSurface_ = gpu->createSurface(metalLayer_);
+      if (!wgSurface_) return TVG_RESULT_INSUFFICIENT_CONDITION;
+      CAMetalLayer *metalLayer = metalLayer_;
+      dispatch_async(dispatch_get_main_queue(), ^{
+        metalLayer.hidden = NO;
+      });
+    }
     auto context = gpu->context();
     return tvg_wgcanvas_set_target_with_context(canvas, &context, wgSurface_, width, height, TVG_COLORSPACE_ABGR8888, 0);
   }
@@ -117,69 +124,73 @@ class MetalSurface final : public Surface {
   void present(const uint32_t *pixels, uint32_t width, uint32_t height) override
   {
     @autoreleasepool {
-      if (!queue_) return;
+      IOSurfaceRef surface = acquire(width, height);
+      if (!surface) return;
 
-      CGSize size = CGSizeMake(width, height);
-      if (!CGSizeEqualToSize(layer_.drawableSize, size)) {
-        [CATransaction begin];
-        [CATransaction setDisableActions:YES];
-        layer_.drawableSize = size;
-        [CATransaction commit];
+      IOSurfaceLock(surface, 0, nullptr);
+      auto *dst = static_cast<uint8_t *>(IOSurfaceGetBaseAddress(surface));
+      auto stride = IOSurfaceGetBytesPerRow(surface);
+      for (uint32_t y = 0; y < height; ++y) {
+        std::memcpy(dst + y * stride, pixels + static_cast<size_t>(y) * width, static_cast<size_t>(width) * 4);
       }
+      IOSurfaceUnlock(surface, 0, nullptr);
 
-      dispatch_semaphore_wait(inflight_, DISPATCH_TIME_FOREVER);
-
-      NSUInteger length = static_cast<NSUInteger>(width) * height * 4;
-      id<MTLBuffer> buffer = buffers_[index_];
-      if (!buffer || buffer.length < length) {
-        buffer = [layer_.device newBufferWithLength:length options:MTLResourceStorageModeShared];
-        buffers_[index_] = buffer;
-      }
-      index_ = (index_ + 1) % kFramesInFlight;
-      std::memcpy(buffer.contents, pixels, length);
-
-      id<CAMetalDrawable> drawable = [layer_ nextDrawable];
-      if (!drawable) {
-        dispatch_semaphore_signal(inflight_);
-        return;
-      }
-
-      NSUInteger copyWidth = std::min<NSUInteger>(width, drawable.texture.width);
-      NSUInteger copyHeight = std::min<NSUInteger>(height, drawable.texture.height);
-
-      id<MTLCommandBuffer> commands = [queue_ commandBuffer];
-      id<MTLBlitCommandEncoder> blit = [commands blitCommandEncoder];
-      [blit copyFromBuffer:buffer
-                 sourceOffset:0
-            sourceBytesPerRow:width * 4
-          sourceBytesPerImage:length
-                   sourceSize:MTLSizeMake(copyWidth, copyHeight, 1)
-                    toTexture:drawable.texture
-             destinationSlice:0
-             destinationLevel:0
-            destinationOrigin:MTLOriginMake(0, 0, 0)];
-      [blit endEncoding];
-      [commands presentDrawable:drawable];
-
-      dispatch_semaphore_t inflight = inflight_;
-      [commands addCompletedHandler:^(id<MTLCommandBuffer>) {
-        dispatch_semaphore_signal(inflight);
-      }];
-      [commands commit];
+      layer_.contents = (__bridge id)surface;
+      current_ = surface;
     }
   }
 
  private:
-  CAMetalLayer *layer_;
-  id<MTLCommandQueue> queue_;
-  dispatch_semaphore_t inflight_;
-  std::array<id<MTLBuffer>, kFramesInFlight> buffers_{};
-  size_t index_ = 0;
+  IOSurfaceRef acquire(uint32_t width, uint32_t height)
+  {
+    if (width == 0 || height == 0) return nullptr;
+    if (width != width_ || height != height_) {
+      surfaces_ = {};
+      current_ = nullptr;
+      width_ = width;
+      height_ = height;
+    }
+    IOSurfaceRef fallback = nullptr;
+    for (auto &surface : surfaces_) {
+      if (!surface) {
+        surface = CFBridgingRelease(create(width, height));
+        return (__bridge IOSurfaceRef)surface;
+      }
+      auto ref = (__bridge IOSurfaceRef)surface;
+      if (ref == current_) continue;
+      if (!IOSurfaceIsInUse(ref)) return ref;
+      fallback = ref;
+    }
+    return fallback;
+  }
+
+  static IOSurfaceRef create(uint32_t width, uint32_t height)
+  {
+    NSDictionary *properties = @{
+      (id)kIOSurfaceWidth : @(width),
+      (id)kIOSurfaceHeight : @(height),
+      (id)kIOSurfaceBytesPerElement : @4,
+      (id)kIOSurfacePixelFormat : @(kCVPixelFormatType_32BGRA),
+    };
+    return IOSurfaceCreate((__bridge CFDictionaryRef)properties);
+  }
+
+  CALayer *layer_;
+  CAMetalLayer *metalLayer_;
+  std::array<id, 3> surfaces_{};
+  IOSurfaceRef current_ = nullptr;
+  uint32_t width_ = 0;
+  uint32_t height_ = 0;
 #if THORVG_RN_WEBGPU
   WGPUSurface wgSurface_ = nullptr;
 #endif
 };
 
+}
+
+void flushPresented()
+{
+  [CATransaction flush];
 }
 
 Gpu *platformGpu()
@@ -191,9 +202,9 @@ Gpu *platformGpu()
 #endif
 }
 
-std::shared_ptr<Surface> makeMetalSurface(CAMetalLayer *layer)
+std::shared_ptr<Surface> makeLayerSurface(CALayer *layer, CAMetalLayer *metalLayer)
 {
-  return std::make_shared<MetalSurface>(layer);
+  return std::make_shared<LayerSurface>(layer, metalLayer);
 }
 
 }

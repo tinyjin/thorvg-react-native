@@ -62,7 +62,7 @@ Pod::Spec.new do |s|
   s.source_files = "ios/**/*.{h,m,mm}", "cpp/**/*.{h,cpp}"
   s.private_header_files = "ios/**/*.h", "cpp/**/*.h"
   s.vendored_frameworks = ["libs/ios/thorvg.xcframework", webgpu ? "libs/webgpu/ios/wgpu.xcframework" : "libs/ios/wgpu-stub.xcframework"]
-  s.frameworks = "Metal", "QuartzCore"
+  s.frameworks = "IOSurface", "Metal", "QuartzCore"
 
   s.pod_target_xcconfig = {
     "CLANG_CXX_LANGUAGE_STANDARD" => "c++20",

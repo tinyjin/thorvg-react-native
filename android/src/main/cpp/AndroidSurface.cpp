@@ -85,6 +85,8 @@ class GlGpu final : public Gpu {
 
 Gpu* platformGpu() { return GlGpu::shared(); }
 
+void flushPresented() {}
+
 AndroidSurface::~AndroidSurface() {
   if (egl_ != EGL_NO_SURFACE) GlGpu::shared()->destroySurface(egl_);
   ANativeWindow_release(window_);

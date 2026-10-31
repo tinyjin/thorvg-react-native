@@ -79,15 +79,17 @@ class Presenter {
   Presenter() {
     std::thread([this] {
       while (true) {
-        std::shared_ptr<PresentTarget> target;
+        std::deque<std::shared_ptr<PresentTarget>> batch;
         {
           std::unique_lock<std::mutex> lock(mutex_);
           cv_.wait(lock, [this] { return !queue_.empty(); });
-          target = std::move(queue_.front());
-          queue_.pop_front();
+          batch.swap(queue_);
         }
-        target->queued = false;
-        target->present();
+        for (auto& target : batch) {
+          target->queued = false;
+          target->present();
+        }
+        flushPresented();
       }
     }).detach();
   }
