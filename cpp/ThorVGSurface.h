@@ -1,10 +1,12 @@
 #pragma once
 
+#include <array>
 #include <atomic>
 #include <cstdint>
 #include <functional>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -32,6 +34,9 @@ class Gpu {
   virtual Renderer renderer() const = 0;
   virtual Tvg_Canvas create(Tvg_Engine_Option option) = 0;
   virtual void bind(Surface* surface) = 0;
+  virtual void unbind() {}
+  virtual void schedule(std::function<void()> task);
+  virtual void release(Tvg_Canvas canvas, std::shared_ptr<Surface> surface);
 };
 
 Gpu* platformGpu();
@@ -71,6 +76,7 @@ class CanvasHost : public std::enable_shared_from_this<CanvasHost> {
  private:
   void submitLocked();
   bool bindLocked();
+  void applyViewportLocked();
   void requestFrameLocked();
   void drawFrame();
 
@@ -82,6 +88,7 @@ class CanvasHost : public std::enable_shared_from_this<CanvasHost> {
   std::vector<uint32_t> buffer_;
   uint32_t width_ = 0;
   uint32_t height_ = 0;
+  std::optional<std::array<int32_t, 4>> viewport_;
   bool drawn_ = false;
   std::shared_ptr<Surface> surface_;
   std::shared_ptr<Surface> bound_;

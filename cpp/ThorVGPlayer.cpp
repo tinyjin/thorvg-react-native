@@ -161,7 +161,6 @@ void Player::draw() {
   if (!host || !animation_) return;
   tvg_animation_set_frame(animation_, frame_);
   if (host->renderer() == Renderer::Gl) {
-    // The GL context belongs to the JS thread.
     host->render();
   } else {
     host->update();

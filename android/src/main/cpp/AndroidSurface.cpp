@@ -2,6 +2,9 @@
 
 #include <algorithm>
 #include <cstring>
+#include <vector>
+
+#include "AndroidTicker.h"
 
 namespace thorvg::rn {
 
@@ -28,6 +31,21 @@ class GlGpu final : public Gpu {
     auto draw = android && android->egl() != EGL_NO_SURFACE ? android->egl() : pbuffer_;
     if (eglGetCurrentContext() == context_ && eglGetCurrentSurface(EGL_DRAW) == draw) return;
     eglMakeCurrent(display_, draw, draw, context_);
+  }
+
+  void unbind() override { eglMakeCurrent(display_, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT); }
+
+  void schedule(std::function<void()> task) override {
+    {
+      std::lock_guard<std::mutex> lock(tasksMutex_);
+      tasks_.push_back(std::move(task));
+      if (tasks_.size() > 1) return;
+    }
+    runOnRenderThread([this] { flush(); });
+  }
+
+  void release(Tvg_Canvas canvas, std::shared_ptr<Surface> surface) override {
+    schedule([this, canvas, surface = std::move(surface)] { Gpu::release(canvas, surface); });
   }
 
   EGLSurface createSurface(ANativeWindow* window) {
@@ -75,6 +93,19 @@ class GlGpu final : public Gpu {
     return true;
   }
 
+  void flush() {
+    std::lock_guard<std::recursive_mutex> engine(engineMutex());
+    std::vector<std::function<void()>> tasks;
+    {
+      std::lock_guard<std::mutex> lock(tasksMutex_);
+      tasks.swap(tasks_);
+    }
+    for (auto& task : tasks) task();
+    unbind();
+  }
+
+  std::mutex tasksMutex_;
+  std::vector<std::function<void()>> tasks_;
   EGLDisplay display_ = EGL_NO_DISPLAY;
   EGLConfig config_ = nullptr;
   EGLContext context_ = EGL_NO_CONTEXT;
