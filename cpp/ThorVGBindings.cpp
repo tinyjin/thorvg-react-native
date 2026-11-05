@@ -511,8 +511,8 @@ void installPicture(Builder& b) {
   b.fn("tvg_picture_set_asset_resolver", 2, [](jsi::Runtime& rt, const jsi::Value&, Args args, size_t count) {
     auto picture = handlePtr<Tvg_Paint>(rt, at(args, count, 0));
     auto id = static_cast<intptr_t>(number(at(args, count, 1)));
-    auto result = id ? tvg_picture_set_asset_resolver(picture, assetResolver, reinterpret_cast<void*>(id))
-                     : tvg_picture_set_asset_resolver(picture, nullptr, nullptr);
+    auto result = id ? tvg_picture_set_asset_resolver(picture, assetResolver, reinterpret_cast<void*>(id), true)
+                     : tvg_picture_set_asset_resolver(picture, nullptr, nullptr, true);
     return jsi::Value(static_cast<int>(result));
   });
 }
