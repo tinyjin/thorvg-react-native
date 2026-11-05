@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import {
   FlatList,
   Image,
@@ -11,33 +11,34 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { examples, type Example } from '../examples';
 import { ASSETS } from '../examples/assets';
-import { categories, colors } from '../theme';
-
-type CategoryKey = (typeof categories)[number]['key'];
+import { categories, colors, type CategoryKey } from '../theme';
 
 const GAP = 12;
 const PADDING = 16;
 
+export function examplesIn(category: CategoryKey): Example[] {
+  return category === 'all'
+    ? examples
+    : examples.filter((example) => example.category === category);
+}
+
 export function ExampleList({
   version,
+  category,
+  onCategoryChange,
   onSelect,
 }: {
   version: string | null;
+  category: CategoryKey;
+  onCategoryChange: (category: CategoryKey) => void;
   onSelect: (example: Example) => void;
 }) {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
-  const [category, setCategory] = useState<CategoryKey>('all');
   const columns = width >= 700 ? 3 : 2;
   const cardWidth = (width - PADDING * 2 - GAP * (columns - 1)) / columns;
 
-  const data = useMemo(
-    () =>
-      category === 'all'
-        ? examples
-        : examples.filter((example) => example.category === category),
-    [category]
-  );
+  const data = useMemo(() => examplesIn(category), [category]);
 
   return (
     <FlatList
@@ -62,7 +63,7 @@ export function ExampleList({
             {categories.map((item) => (
               <Pressable
                 key={item.key}
-                onPress={() => setCategory(item.key)}
+                onPress={() => onCategoryChange(item.key)}
                 style={[
                   styles.chip,
                   category === item.key && styles.chipActive,

@@ -20,9 +20,15 @@ const MAX_ERRORS = 20;
 export function ExampleDetail({
   example,
   onBack,
+  prev,
+  next,
+  onSelect,
 }: {
   example: Example;
   onBack: () => void;
+  prev: Example | null;
+  next: Example | null;
+  onSelect: (example: Example) => void;
 }) {
   const insets = useSafeAreaInsets();
   const { width: windowWidth } = useWindowDimensions();
@@ -34,7 +40,7 @@ export function ExampleDetail({
   useEffect(() => {
     setErrors([]);
     setErrorSink((error) =>
-      setErrors((prev) => [...prev.slice(-(MAX_ERRORS - 1)), error.message])
+      setErrors((list) => [...list.slice(-(MAX_ERRORS - 1)), error.message])
     );
     return () => setErrorSink(null);
   }, [example]);
@@ -53,6 +59,27 @@ export function ExampleDetail({
         <Text style={styles.title} numberOfLines={1}>
           {example.title}
         </Text>
+        <View style={styles.nav}>
+          <Pressable
+            onPress={() => prev && onSelect(prev)}
+            disabled={!prev}
+            hitSlop={8}
+          >
+            <Text style={[styles.navText, !prev && styles.navDisabled]}>
+              ‹ Prev
+            </Text>
+          </Pressable>
+          <Text style={styles.navSeparator}>|</Text>
+          <Pressable
+            onPress={() => next && onSelect(next)}
+            disabled={!next}
+            hitSlop={8}
+          >
+            <Text style={[styles.navText, !next && styles.navDisabled]}>
+              Next ›
+            </Text>
+          </Pressable>
+        </View>
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
@@ -112,6 +139,22 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontSize: 17,
     fontWeight: '600',
+  },
+  nav: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  navText: {
+    color: colors.accent,
+    fontSize: 16,
+  },
+  navDisabled: {
+    color: colors.border,
+  },
+  navSeparator: {
+    color: colors.border,
+    fontSize: 16,
   },
   content: {
     padding: PADDING,

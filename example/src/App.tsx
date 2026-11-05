@@ -1,5 +1,5 @@
 import './examples/assets';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   BackHandler,
   Linking,
@@ -14,9 +14,9 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useThorVG } from 'thorvg-react-native';
 import { examples, type Example } from './examples';
 import { ExampleDetail } from './screens/ExampleDetail';
-import { ExampleList } from './screens/ExampleList';
+import { ExampleList, examplesIn } from './screens/ExampleList';
 import { reportError } from './errorSink';
-import { colors } from './theme';
+import { colors, type CategoryKey } from './theme';
 
 function exampleFromUrl(url: string | null | undefined): Example | null {
   const id = url?.match(/example[/=]([a-z0-9-]+)/)?.[1];
@@ -75,6 +75,17 @@ function Root() {
   const TVG = useThorVG({ onError: reportError });
   const [selected, setSelected] = useState<Example | null>(null);
   const [embedded] = useState(embeddedExample);
+  const [category, setCategory] = useState<CategoryKey>('all');
+
+  // Deep-linked examples outside the category fall back to the full list
+  const siblings = useMemo(() => {
+    const inCategory = examplesIn(category);
+    return selected && !inCategory.includes(selected) ? examples : inCategory;
+  }, [category, selected]);
+  const index = selected ? siblings.indexOf(selected) : -1;
+  const prev = index > 0 ? siblings[index - 1] : null;
+  const next =
+    index >= 0 && index < siblings.length - 1 ? siblings[index + 1] : null;
 
   useEffect(() => {
     Linking.getInitialURL().then((url) => {
@@ -110,13 +121,29 @@ function Root() {
 
   if (embedded) return <Embed example={embedded} />;
 
-  if (selected) {
-    return (
-      <ExampleDetail example={selected} onBack={() => setSelected(null)} />
-    );
-  }
-
-  return <ExampleList version={TVG.version} onSelect={setSelected} />;
+  // Keep the list mounted so its scroll position survives
+  return (
+    <View style={styles.root}>
+      <ExampleList
+        version={TVG.version}
+        category={category}
+        onCategoryChange={setCategory}
+        onSelect={setSelected}
+      />
+      {selected ? (
+        <View style={styles.overlay}>
+          <ExampleDetail
+            key={selected.id}
+            example={selected}
+            onBack={() => setSelected(null)}
+            prev={prev}
+            next={next}
+            onSelect={setSelected}
+          />
+        </View>
+      ) : null}
+    </View>
+  );
 }
 
 export default function App() {
@@ -134,6 +161,14 @@ const styles = StyleSheet.create({
   },
   root: {
     flex: 1,
+    backgroundColor: colors.background,
+  },
+  overlay: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
     backgroundColor: colors.background,
   },
   loading: {

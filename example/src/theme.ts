@@ -20,3 +20,5 @@ export const categories = [
   { key: 'components', label: 'Components' },
   { key: 'views', label: 'Views' },
 ] as const;
+
+export type CategoryKey = (typeof categories)[number]['key'];
