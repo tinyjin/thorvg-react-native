@@ -5,9 +5,11 @@
 [![CI](https://github.com/tinyjin/thorvg-react-native/actions/workflows/ci.yml/badge.svg)](https://github.com/tinyjin/thorvg-react-native/actions/workflows/ci.yml)
 [![Ask DeepWiki](https://img.shields.io/badge/Ask-DeepWiki-blue)](https://deepwiki.com/tinyjin/thorvg-react-native)
 
-High-performance vector graphics and Lottie rendering on Android, iOS and web, powered by [ThorVG](https://github.com/thorvg/thorvg).
+Fast, lightweight Lottie, SVG and Canvas rendering for React Native — Android, iOS & [Web](https://github.com/thorvg/thorvg.web), powered by [ThorVG](https://github.com/thorvg/thorvg).
 
-> Full documentation [here](https://tinyjin.github.io/thorvg-react-native)
+- Full documentation [here](https://tinyjin.github.io/thorvg-react-native)
+- See examples [here](https://tinyjin.github.io/thorvg-react-native/examples)
+
 
 ## Installation
 
@@ -17,9 +19,7 @@ npm install thorvg-react-native
 
 ## Usage
 
-### Components (Declarative API)
-
-Draw with React components (JSX).
+### Components
 
 ```tsx
 import { Canvas, Rect } from 'thorvg-react-native';
@@ -31,9 +31,39 @@ const Example = () => (
 );
 ```
 
-### WebCanvas API
 
-Use the [`@thorvg/webcanvas`](https://www.npmjs.com/package/@thorvg/webcanvas) API directly with `useThorVG`.
+
+### LottieView
+
+ThorVG provides a powerful Lottie runtime.
+
+```tsx
+import { LottieView } from 'thorvg-react-native';
+
+<LottieView
+  source={require('./confetti.json')}
+  autoplay
+  loop
+  style={{ width: 200, height: 200 }}
+/>
+```
+
+### SvgView
+
+It could be an alternative to SVG rendering in React Native.
+
+```tsx
+import { SvgView } from 'thorvg-react-native';
+
+<SvgView
+  source={{ uri: 'https://example.com/logo.svg' }}
+  style={{ width: 120, height: 120 }}
+/>
+```
+
+### Compatible API
+
+Use the [`@thorvg/webcanvas`](https://www.npmjs.com/package/@thorvg/webcanvas) API directly.
 
 ```tsx
 import { useEffect, useRef } from 'react';
@@ -58,36 +88,6 @@ const Example = () => {
 }
 ```
 
-### Views
-
-#### LottieView
-
-ThorVG provides a powerful Lottie runtime. You can play Lottie animations without installing any additional packages.
-
-```tsx
-import { LottieView } from 'thorvg-react-native';
-
-<LottieView
-  source={require('./confetti.json')}
-  autoplay
-  loop
-  style={{ width: 200, height: 200 }}
-/>
-```
-
-#### SvgView
-
-SVG support is built into ThorVG. You can load SVG files directly.
-
-```tsx
-import { SvgView } from 'thorvg-react-native';
-
-<SvgView
-  source={{ uri: 'https://example.com/logo.svg' }}
-  style={{ width: 120, height: 120 }}
-/>
-```
-
 ## Architecture
 
 The Core API is compatible with [`@thorvg/webcanvas`](https://www.npmjs.com/package/@thorvg/webcanvas). On iOS and Android follow same classes run on the native ThorVG engine through [JSI](https://reactnative.dev/architecture/glossary#javascript-interfaces-jsi).
@@ -107,11 +107,12 @@ The JSI binding calls the ThorVG C API and draws into the view's Android `Surfac
 
 ### iOS
 
-The JSI binding calls the ThorVG C API and draws into the view's `CAMetalLayer`.
+The JSI binding calls the ThorVG C API and draws into the view's `CALayer` or `CAMetalLayer`.
 
 - Run `pod install` in your `ios` directory after installing the package.
 - iOS supports `'sw'` and `'wg'` (WebGPU on Metal, experimental).
-- WebGPU is not included in the published package. See [WebGPU Support](https://tinyjin.github.io/thorvg-react-native/docs/platforms#webgpu-support).
+  - The `'sw'` backend presents CPU buffer through a `CALayer` using an `IOSurface`.
+  - WebGPU is not included in the published package. See [WebGPU Support](https://tinyjin.github.io/thorvg-react-native/docs/platforms#webgpu-support).
 
 ### Web
 
@@ -133,7 +134,6 @@ useThorVG({ locateFile: (path) => 'https://example.com/path/to/' + path.split('/
 - iOS 15.1+
 - Android API 24+
 - Node 24.15+
-- Yarn 4.18+
 
 ### Build and Run
 
@@ -143,5 +143,3 @@ yarn
 yarn build:thorvg            # prebuilt ThorVG into `libs` (needs meson, ninja, pkg-config, Xcode, Android NDK)
 yarn example ios             # or: yarn example android, yarn example web
 ```
-
-> More examples [here](https://tinyjin.github.io/thorvg-react-native/examples)

@@ -57,8 +57,7 @@ export default function Home() {
             ThorVG for React Native
           </Heading>
           <p className={styles.tagline}>
-            High-performance vector graphics and Lottie rendering on Android,
-            iOS and web.
+            Fast, lightweight Lottie, SVG and Canvas rendering for React Native
           </p>
           <div className={styles.buttons}>
             <Link className="button button--primary button--lg" to="/docs/getting-started">

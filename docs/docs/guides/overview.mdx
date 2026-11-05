@@ -16,7 +16,7 @@ The package runs the [`@thorvg/webcanvas`](https://www.npmjs.com/package/@thorvg
 | Bindings | On Android and iOS, the classes call the ThorVG C API through JSI. On web, they are WebCanvas itself, running ThorVG as WebAssembly |
 | Engine | ThorVG, which builds the scene and renders it |
 | Render backends | The engine renders with the CPU (`'sw'`), OpenGL ES or WebGL (`'gl'`), or WebGPU (`'wg'`, Metal on iOS) |
-| Surfaces | The result is shown in a `TextureView` or `SurfaceView` on Android, a `CAMetalLayer` on iOS and a `<canvas>` element on web |
+| Surfaces | The result is shown in a `TextureView` or `SurfaceView` on Android, a `CALayer` (`'sw'`) or `CAMetalLayer` (`'wg'`) on iOS and a `<canvas>` element on web |
 
 ## Native
 

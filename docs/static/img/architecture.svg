@@ -72,7 +72,7 @@
     <text x="324" y="780" font-size="22">Android</text>
     <text x="324" y="808" font-size="15" font-weight="500">TextureView · SurfaceView</text>
     <text x="535" y="780" font-size="22">iOS</text>
-    <text x="535" y="808" font-size="15" font-weight="500">CAMetalLayer</text>
+    <text x="535" y="808" font-size="15" font-weight="500">CALayer · CAMetalLayer</text>
     <text x="746" y="780" font-size="22">Web</text>
     <text x="746" y="808" font-size="15" font-weight="500">HTML canvas</text>
 
