@@ -1,4 +1,5 @@
 import { Image } from 'react-native';
+import { readLocalAsset } from './asset';
 
 export interface UriSource {
   uri: string;
@@ -11,16 +12,19 @@ export type SvgSource = number | UriSource | string;
 
 const cache = new Map<string, Promise<string>>();
 
-function fetchText(source: UriSource): Promise<string> {
+function loadText(source: UriSource): Promise<string> {
   const key = source.headers
     ? `${source.uri}\n${JSON.stringify(source.headers)}`
     : source.uri;
   let request = cache.get(key);
   if (!request) {
-    request = fetch(source.uri, { headers: source.headers }).then((res) => {
-      if (!res.ok) throw new Error(`${res.status} ${source.uri}`);
-      return res.text();
-    });
+    const fetchText = () =>
+      fetch(source.uri, { headers: source.headers }).then((res) => {
+        if (!res.ok) throw new Error(`${res.status} ${source.uri}`);
+        return res.text();
+      });
+    const local = readLocalAsset(source.uri);
+    request = local ? local.catch(fetchText) : fetchText();
     request.catch(() => cache.delete(key));
     cache.set(key, request);
   }
@@ -33,11 +37,11 @@ export function loadSource(source: LottieSource | SvgSource): Promise<string> {
     if (!asset?.uri) {
       return Promise.reject(new Error('ThorVG: unresolved asset source'));
     }
-    return fetchText({ uri: asset.uri });
+    return loadText({ uri: asset.uri });
   }
   if (typeof source === 'string') return Promise.resolve(source);
   if ('uri' in source && typeof source.uri === 'string') {
-    return fetchText(source as UriSource);
+    return loadText(source as UriSource);
   }
   return Promise.resolve(JSON.stringify(source));
 }
