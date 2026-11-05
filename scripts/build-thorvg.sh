@@ -26,7 +26,6 @@ MESON_OPTIONS=(
   -Dpartial=true
   -Dfile=false
   -Dlog=false
-  -Dtools=
   -Dtests=false
 )
 
