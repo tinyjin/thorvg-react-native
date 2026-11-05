@@ -93,15 +93,18 @@ class GlGpu final : public Gpu {
     return true;
   }
 
+  // The context is only current while the engine lock is held, so JS calls can run between tasks.
   void flush() {
-    std::lock_guard<std::recursive_mutex> engine(engineMutex());
     std::vector<std::function<void()>> tasks;
     {
       std::lock_guard<std::mutex> lock(tasksMutex_);
       tasks.swap(tasks_);
     }
-    for (auto& task : tasks) task();
-    unbind();
+    for (auto& task : tasks) {
+      std::lock_guard<EngineMutex> engine(engineMutex());
+      task();
+      unbind();
+    }
   }
 
   std::mutex tasksMutex_;

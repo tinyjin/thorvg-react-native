@@ -2,12 +2,14 @@
 
 #include <array>
 #include <atomic>
+#include <condition_variable>
 #include <cstdint>
 #include <functional>
 #include <memory>
 #include <mutex>
 #include <optional>
 #include <string>
+#include <thread>
 #include <unordered_map>
 #include <vector>
 
@@ -44,7 +46,22 @@ void flushPresented();
 
 void setScheduler(std::function<void(std::function<void()>)> scheduler);
 void runOnJS(std::function<void()> task);
-std::recursive_mutex& engineMutex();
+// FIFO so the render thread, which re-locks per task, can't starve JS calls.
+class EngineMutex {
+ public:
+  void lock();
+  void unlock();
+
+ private:
+  std::mutex mutex_;
+  std::condition_variable cv_;
+  uint64_t next_ = 0;
+  uint64_t serving_ = 0;
+  std::thread::id owner_;
+  uint32_t depth_ = 0;
+};
+
+EngineMutex& engineMutex();
 
 struct PresentTarget;
 

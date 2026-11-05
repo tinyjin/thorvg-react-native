@@ -128,8 +128,29 @@ void runOnJS(std::function<void()> task) {
   if (gScheduler) gScheduler(std::move(task));
 }
 
-std::recursive_mutex& engineMutex() {
-  static std::recursive_mutex mutex;
+void EngineMutex::lock() {
+  auto self = std::this_thread::get_id();
+  std::unique_lock<std::mutex> lock(mutex_);
+  if (owner_ == self) {
+    ++depth_;
+    return;
+  }
+  auto ticket = next_++;
+  cv_.wait(lock, [&] { return serving_ == ticket; });
+  owner_ = self;
+  depth_ = 1;
+}
+
+void EngineMutex::unlock() {
+  std::lock_guard<std::mutex> lock(mutex_);
+  if (--depth_ > 0) return;
+  owner_ = {};
+  ++serving_;
+  cv_.notify_all();
+}
+
+EngineMutex& engineMutex() {
+  static EngineMutex mutex;
   return mutex;
 }
 
@@ -313,7 +334,7 @@ void CanvasHost::requestFrameLocked() {
 }
 
 void CanvasHost::drawFrame() {
-  std::lock_guard<std::recursive_mutex> engine(engineMutex());
+  std::lock_guard<EngineMutex> engine(engineMutex());
   std::lock_guard<std::mutex> lock(mutex_);
   framePending_ = false;
   if (!canvas_ || !bindLocked()) return;

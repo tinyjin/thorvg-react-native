@@ -280,7 +280,7 @@ class Builder {
         jsi::Function::createFromHostFunction(
             rt_, jsi::PropNameID::forAscii(rt_, name), argc,
             [body = std::move(body)](jsi::Runtime& rt, const jsi::Value& self, const jsi::Value* args, size_t count) {
-              std::lock_guard<std::recursive_mutex> lock(engineMutex());
+              std::lock_guard<EngineMutex> lock(engineMutex());
               drainReleases();
               return body(rt, self, args, count);
             }));

@@ -25,7 +25,7 @@ std::mutex& tickerMutex() {
 }
 
 void tickAll(double now) {
-  std::lock_guard<std::recursive_mutex> lock(engineMutex());
+  std::lock_guard<EngineMutex> lock(engineMutex());
   auto epoch = wakeups.load();
   auto players = active();
   auto running = false;
