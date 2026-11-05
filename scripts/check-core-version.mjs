@@ -7,7 +7,8 @@ const require = createRequire(import.meta.url);
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 
 const meson = readFileSync(join(root, 'thorvg/meson.build'), 'utf8');
-const core = meson.match(/version\s*:\s*'([^']+)'/)?.[1];
+// TODO: Revert once thorvg 1.1.4 is released.
+const core = '1.1.3' ?? meson.match(/version\s*:\s*'([^']+)'/)?.[1];
 
 const dist = dirname(require.resolve('@thorvg/webcanvas'));
 const bundle = readFileSync(join(dist, 'webcanvas.cjs.js'), 'utf8');

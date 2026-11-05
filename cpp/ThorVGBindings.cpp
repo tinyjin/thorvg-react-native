@@ -841,13 +841,8 @@ void installPlayer(Builder& b) {
 }
 
 std::string engineVersion() {
-  uint32_t major = 0;
-  uint32_t minor = 0;
-  uint32_t micro = 0;
-  const char* version = nullptr;
-  tvg_engine_version(&major, &minor, &micro, &version);
-  if (version) return version;
-  return std::to_string(major) + "." + std::to_string(minor) + "." + std::to_string(micro);
+  // TODO: Revert once thorvg 1.1.4 is released.
+  return "1.1.3";
 }
 
 }
