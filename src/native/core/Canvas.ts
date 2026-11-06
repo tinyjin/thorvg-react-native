@@ -193,8 +193,15 @@ export class Canvas {
     if (!this.#handle) {
       return this;
     }
+    const dpr = this.#enableDevicePixelRatio ? this.#currentDPR : 1;
     checkResult(
-      getJSI().tvg_canvas_set_viewport(this.#handle, x, y, w, h),
+      getJSI().tvg_canvas_set_viewport(
+        this.#handle,
+        x * dpr,
+        y * dpr,
+        w * dpr,
+        h * dpr
+      ),
       'viewport'
     );
     return this;
