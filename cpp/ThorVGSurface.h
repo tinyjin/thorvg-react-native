@@ -22,12 +22,19 @@ enum class Renderer { Sw, Gl, Wg };
 const char* rendererName(Renderer renderer);
 Renderer rendererFromName(const std::string& name);
 
+struct Frame {
+  uint32_t width = 0;
+  uint32_t height = 0;
+  float layoutWidth = 0;
+  float layoutHeight = 0;
+};
+
 class Surface {
  public:
   virtual ~Surface() = default;
-  virtual void present(const uint32_t* pixels, uint32_t width, uint32_t height) = 0;
+  virtual void present(const uint32_t* pixels, const Frame& frame) = 0;
   virtual Tvg_Result target(Tvg_Canvas, uint32_t, uint32_t) { return TVG_RESULT_NOT_SUPPORTED; }
-  virtual void swap() {}
+  virtual void swap(const Frame&) {}
 };
 
 class Gpu {
@@ -79,7 +86,7 @@ class CanvasHost : public std::enable_shared_from_this<CanvasHost> {
   bool visible() const { return visible_; }
   void setVisible(bool visible);
 
-  Tvg_Result resize(uint32_t width, uint32_t height);
+  Tvg_Result resize(uint32_t width, uint32_t height, float layoutWidth, float layoutHeight);
   Tvg_Result render();
   Tvg_Result renderNow();
   Tvg_Result add(Tvg_Paint paint);
@@ -96,6 +103,7 @@ class CanvasHost : public std::enable_shared_from_this<CanvasHost> {
   void applyViewportLocked();
   void requestFrameLocked();
   void drawFrame();
+  Frame frameLocked() const { return {width_, height_, layoutWidth_, layoutHeight_}; }
 
   std::mutex mutex_;
   Tvg_Canvas canvas_ = nullptr;
@@ -105,6 +113,8 @@ class CanvasHost : public std::enable_shared_from_this<CanvasHost> {
   std::vector<uint32_t> buffer_;
   uint32_t width_ = 0;
   uint32_t height_ = 0;
+  float layoutWidth_ = 0;
+  float layoutHeight_ = 0;
   std::optional<std::array<int32_t, 4>> viewport_;
   bool drawn_ = false;
   std::shared_ptr<Surface> surface_;

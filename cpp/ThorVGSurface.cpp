@@ -29,10 +29,8 @@ struct PresentTarget {
   std::shared_ptr<Surface> surface;
   std::vector<uint32_t> back;
   std::vector<uint32_t> front;
-  uint32_t width = 0;
-  uint32_t height = 0;
-  uint32_t frontWidth = 0;
-  uint32_t frontHeight = 0;
+  Frame frame;
+  Frame frontFrame;
   bool dirty = false;
   bool repaint = false;
   std::atomic<bool> queued{false};
@@ -44,8 +42,7 @@ struct PresentTarget {
       if (!surface) return;
       if (dirty) {
         back.swap(front);
-        frontWidth = width;
-        frontHeight = height;
+        frontFrame = frame;
         dirty = false;
       } else if (!repaint || front.empty()) {
         return;
@@ -53,7 +50,7 @@ struct PresentTarget {
       repaint = false;
       target = surface;
     }
-    target->present(front.data(), frontWidth, frontHeight);
+    target->present(front.data(), frontFrame);
   }
 };
 
@@ -195,11 +192,13 @@ CanvasHost::~CanvasHost() {
   }
 }
 
-Tvg_Result CanvasHost::resize(uint32_t width, uint32_t height) {
+Tvg_Result CanvasHost::resize(uint32_t width, uint32_t height, float layoutWidth, float layoutHeight) {
   std::lock_guard<std::mutex> lock(mutex_);
   if (!canvas_) return TVG_RESULT_INSUFFICIENT_CONDITION;
   width = std::max(width, 1u);
   height = std::max(height, 1u);
+  layoutWidth_ = layoutWidth > 0 ? layoutWidth : static_cast<float>(width);
+  layoutHeight_ = layoutHeight > 0 ? layoutHeight : static_cast<float>(height);
   if (width == width_ && height == height_) return TVG_RESULT_SUCCESS;
 
   width_ = width;
@@ -245,7 +244,7 @@ Tvg_Result CanvasHost::renderNow() {
       tvg_canvas_update(canvas_);
       tvg_canvas_draw(canvas_, true);
       tvg_canvas_sync(canvas_);
-      surface_->swap();
+      surface_->swap(frameLocked());
       return TVG_RESULT_SUCCESS;
     }
   }
@@ -318,8 +317,7 @@ void CanvasHost::submitLocked() {
   {
     std::lock_guard<std::mutex> target(present_->mutex);
     present_->back.assign(buffer_.begin(), buffer_.end());
-    present_->width = width_;
-    present_->height = height_;
+    present_->frame = frameLocked();
     present_->dirty = true;
   }
   Presenter::shared().schedule(present_);
@@ -341,7 +339,7 @@ void CanvasHost::drawFrame() {
   tvg_canvas_update(canvas_);
   tvg_canvas_draw(canvas_, true);
   tvg_canvas_sync(canvas_);
-  surface_->swap();
+  surface_->swap(frameLocked());
 }
 
 bool CanvasHost::bindLocked() {

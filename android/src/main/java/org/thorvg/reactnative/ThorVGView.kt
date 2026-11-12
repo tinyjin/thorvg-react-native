@@ -1,6 +1,7 @@
 package org.thorvg.reactnative
 
 import android.content.Context
+import android.graphics.Matrix
 import android.graphics.PixelFormat
 import android.graphics.Rect
 import android.graphics.SurfaceTexture
@@ -13,7 +14,9 @@ import android.view.ViewGroup
 import android.view.ViewTreeObserver
 import android.widget.HorizontalScrollView
 import android.widget.ScrollView
+import com.facebook.react.uimanager.PixelUtil
 import com.facebook.react.views.view.ReactViewGroup
+import kotlin.math.abs
 
 class ThorVGView(context: Context) : ReactViewGroup(context) {
   private var surfaceId = 0
@@ -22,6 +25,9 @@ class ThorVGView(context: Context) : ReactViewGroup(context) {
   private var surface: Surface? = null
   private var ownsSurface = false
   private var attached = false
+  private var surfaceHandle = 0L
+  private val transform = Matrix()
+  private var transformed = false
   private var visible = true
   private val visibleRect = Rect()
   private val clipRect = Rect()
@@ -84,6 +90,25 @@ class ThorVGView(context: Context) : ReactViewGroup(context) {
       )
       it.layout(0, 0, width, height)
     }
+    fitFrame()
+  }
+
+  private fun fitFrame() {
+    val view = renderView as? TextureView ?: return
+    val layout = if (attached) ThorVGSurfaces.presentedLayout(surfaceHandle) else 0L
+    val frameWidth = PixelUtil.toPixelFromDIP(Float.fromBits((layout ushr 32).toInt()))
+    val frameHeight = PixelUtil.toPixelFromDIP(Float.fromBits(layout.toInt()))
+    if (layout == 0L || view.width == 0 || view.height == 0 ||
+      (abs(frameWidth - view.width) < 0.5f && abs(frameHeight - view.height) < 0.5f)) {
+      if (transformed) {
+        view.setTransform(null)
+        transformed = false
+      }
+      return
+    }
+    transform.setScale(frameWidth / view.width, frameHeight / view.height, 0f, 0f)
+    view.setTransform(transform)
+    transformed = true
   }
 
   private fun updateVisibility() {
@@ -145,7 +170,7 @@ class ThorVGView(context: Context) : ReactViewGroup(context) {
           return true
         }
 
-        override fun onSurfaceTextureUpdated(texture: SurfaceTexture) = Unit
+        override fun onSurfaceTextureUpdated(texture: SurfaceTexture) = fitFrame()
       }
     }
 
@@ -177,13 +202,14 @@ class ThorVGView(context: Context) : ReactViewGroup(context) {
   private fun attachSurface() {
     val current = surface ?: return
     if (surfaceId == 0 || attached || !current.isValid) return
-    ThorVGSurfaces.attach(surfaceId, current)
-    attached = true
+    surfaceHandle = ThorVGSurfaces.attach(surfaceId, current)
+    attached = surfaceHandle != 0L
   }
 
   private fun detachSurface() {
     if (!attached) return
-    ThorVGSurfaces.detach(surfaceId)
+    ThorVGSurfaces.detach(surfaceId, surfaceHandle)
+    surfaceHandle = 0L
     attached = false
   }
 

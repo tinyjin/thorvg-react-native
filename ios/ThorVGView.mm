@@ -36,6 +36,7 @@ using namespace facebook::react;
   if (self = [super initWithFrame:frame]) {
     self.userInteractionEnabled = NO;
     self.backgroundColor = UIColor.clearColor;
+    self.clipsToBounds = YES;
 
     _contentLayer = [CALayer layer];
     [self.layer addSublayer:_contentLayer];
@@ -54,15 +55,6 @@ using namespace facebook::react;
     [self addSubview:_metalView];
   }
   return self;
-}
-
-- (void)layoutSubviews
-{
-  [super layoutSubviews];
-  [CATransaction begin];
-  [CATransaction setDisableActions:YES];
-  _contentLayer.frame = self.bounds;
-  [CATransaction commit];
 }
 
 @end

@@ -115,32 +115,42 @@ class LayerSurface final : public Surface {
     return tvg_wgcanvas_set_target_with_context(canvas, &context, wgSurface_, width, height, TVG_COLORSPACE_ABGR8888, 0);
   }
 
-  void swap() override
+  void swap(const Frame &) override
   {
     if (wgSurface_) wgpuSurfacePresent(wgSurface_);
   }
 #endif
 
-  void present(const uint32_t *pixels, uint32_t width, uint32_t height) override
+  void present(const uint32_t *pixels, const Frame &frame) override
   {
     @autoreleasepool {
-      IOSurfaceRef surface = acquire(width, height);
+      IOSurfaceRef surface = acquire(frame.width, frame.height);
       if (!surface) return;
 
       IOSurfaceLock(surface, 0, nullptr);
       auto *dst = static_cast<uint8_t *>(IOSurfaceGetBaseAddress(surface));
       auto stride = IOSurfaceGetBytesPerRow(surface);
-      for (uint32_t y = 0; y < height; ++y) {
-        std::memcpy(dst + y * stride, pixels + static_cast<size_t>(y) * width, static_cast<size_t>(width) * 4);
+      for (uint32_t y = 0; y < frame.height; ++y) {
+        std::memcpy(dst + y * stride, pixels + static_cast<size_t>(y) * frame.width,
+                    static_cast<size_t>(frame.width) * 4);
       }
       IOSurfaceUnlock(surface, 0, nullptr);
 
-      layer_.contents = (__bridge id)surface;
+      show(layer_, (__bridge id)surface, frame);
       current_ = surface;
     }
   }
 
  private:
+  static void show(CALayer *layer, id contents, const Frame &frame)
+  {
+    [CATransaction begin];
+    [CATransaction setDisableActions:YES];
+    layer.contents = contents;
+    layer.frame = CGRectMake(0, 0, frame.layoutWidth, frame.layoutHeight);
+    [CATransaction commit];
+  }
+
   IOSurfaceRef acquire(uint32_t width, uint32_t height)
   {
     if (width == 0 || height == 0) return nullptr;

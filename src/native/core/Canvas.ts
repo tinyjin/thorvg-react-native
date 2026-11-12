@@ -246,6 +246,12 @@ export class Canvas {
     const dpr = this.#enableDevicePixelRatio ? this.#currentDPR : 1;
     const width = Math.max(1, Math.floor(this.#logicalWidth * dpr));
     const height = Math.max(1, Math.floor(this.#logicalHeight * dpr));
-    getJSI().canvas_resize(this.#handle, width, height);
+    getJSI().canvas_resize(
+      this.#handle,
+      width,
+      height,
+      this.#logicalWidth,
+      this.#logicalHeight
+    );
   }
 }

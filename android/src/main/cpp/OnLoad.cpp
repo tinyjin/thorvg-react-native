@@ -3,6 +3,8 @@
 #include <fbjni/fbjni.h>
 #include <jsi/jsi.h>
 
+#include <memory>
+
 #include "AndroidSurface.h"
 #include "ThorVGBindings.h"
 
@@ -35,19 +37,30 @@ struct ThorVGSurfaces : jni::JavaClass<ThorVGSurfaces> {
 
   static void registerNatives() {
     javaClassLocal()->registerNatives({
-        makeNativeMethod("nativeAttach", "(ILandroid/view/Surface;)V", ThorVGSurfaces::attach),
+        makeNativeMethod("nativeAttach", "(ILandroid/view/Surface;)J", ThorVGSurfaces::attach),
         makeNativeMethod("nativeDetach", ThorVGSurfaces::detach),
         makeNativeMethod("nativeSetVisible", ThorVGSurfaces::setVisible),
+        makeNativeMethod("nativePresentedLayout", ThorVGSurfaces::presentedLayout),
     });
   }
 
-  static void attach(jni::alias_ref<jclass>, jint surfaceId, jni::alias_ref<jobject> surface) {
+  static jlong attach(jni::alias_ref<jclass>, jint surfaceId, jni::alias_ref<jobject> surface) {
     auto* window = ANativeWindow_fromSurface(jni::Environment::current(), surface.get());
-    if (!window) return;
-    SurfaceRegistry::shared().attachSurface(surfaceId, std::make_shared<AndroidSurface>(window));
+    if (!window) return 0;
+    auto created = std::make_shared<AndroidSurface>(window);
+    SurfaceRegistry::shared().attachSurface(surfaceId, created);
+    return reinterpret_cast<jlong>(new std::shared_ptr<AndroidSurface>(std::move(created)));
   }
 
-  static void detach(jni::alias_ref<jclass>, jint surfaceId) { SurfaceRegistry::shared().detachSurface(surfaceId); }
+  static void detach(jni::alias_ref<jclass>, jint surfaceId, jlong handle) {
+    SurfaceRegistry::shared().detachSurface(surfaceId);
+    delete reinterpret_cast<std::shared_ptr<AndroidSurface>*>(handle);
+  }
+
+  static jlong presentedLayout(jni::alias_ref<jclass>, jlong handle) {
+    if (!handle) return 0;
+    return static_cast<jlong>((*reinterpret_cast<std::shared_ptr<AndroidSurface>*>(handle))->presentedLayout());
+  }
 
   static void setVisible(jni::alias_ref<jclass>, jint surfaceId, jboolean visible) {
     SurfaceRegistry::shared().setVisible(surfaceId, visible);

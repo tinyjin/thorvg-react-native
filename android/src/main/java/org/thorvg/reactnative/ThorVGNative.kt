@@ -20,15 +20,19 @@ internal object ThorVGSurfaces {
     ThorVGNative.load()
   }
 
-  fun attach(surfaceId: Int, surface: Surface) = nativeAttach(surfaceId, surface)
+  fun attach(surfaceId: Int, surface: Surface): Long = nativeAttach(surfaceId, surface)
 
-  fun detach(surfaceId: Int) = nativeDetach(surfaceId)
+  fun detach(surfaceId: Int, handle: Long) = nativeDetach(surfaceId, handle)
 
   fun setVisible(surfaceId: Int, visible: Boolean) = nativeSetVisible(surfaceId, visible)
 
-  @JvmStatic @DoNotStrip private external fun nativeAttach(surfaceId: Int, surface: Surface)
+  fun presentedLayout(handle: Long): Long = nativePresentedLayout(handle)
 
-  @JvmStatic @DoNotStrip private external fun nativeDetach(surfaceId: Int)
+  @JvmStatic @DoNotStrip private external fun nativeAttach(surfaceId: Int, surface: Surface): Long
+
+  @JvmStatic @DoNotStrip private external fun nativeDetach(surfaceId: Int, handle: Long)
 
   @JvmStatic @DoNotStrip private external fun nativeSetVisible(surfaceId: Int, visible: Boolean)
+
+  @JvmStatic @DoNotStrip private external fun nativePresentedLayout(handle: Long): Long
 }

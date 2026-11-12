@@ -24,7 +24,13 @@ export interface ThorVGJSI {
   ): CanvasHandle | null;
   canvas_destroy(canvas: CanvasHandle): void;
   canvas_renderer(canvas: CanvasHandle): string;
-  canvas_resize(canvas: CanvasHandle, width: number, height: number): Result;
+  canvas_resize(
+    canvas: CanvasHandle,
+    width: number,
+    height: number,
+    layoutWidth: number,
+    layoutHeight: number
+  ): Result;
   canvas_render(canvas: CanvasHandle): Result;
   tvg_canvas_add(canvas: CanvasHandle, paint: Handle): Result;
   tvg_canvas_remove(canvas: CanvasHandle, paint: Handle | null): Result;
