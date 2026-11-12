@@ -7,6 +7,7 @@
 #include <thread>
 
 #include "ThorVGPlayer.h"
+#include "ThorVGTicker.h"
 
 namespace thorvg::rn {
 
@@ -151,7 +152,7 @@ EngineMutex& engineMutex() {
   return mutex;
 }
 
-void Gpu::schedule(std::function<void()> task) { runOnJS(std::move(task)); }
+void Gpu::schedule(std::function<void()> task) { runOnRenderThread(std::move(task)); }
 
 void Gpu::release(Tvg_Canvas canvas, std::shared_ptr<Surface> surface) {
   bind(surface.get());
@@ -327,12 +328,12 @@ void CanvasHost::requestFrameLocked() {
   if (framePending_) return;
   framePending_ = true;
   gpu_->schedule([weak = weak_from_this()] {
+    std::lock_guard<EngineMutex> engine(engineMutex());
     if (auto host = weak.lock()) host->drawFrame();
   });
 }
 
 void CanvasHost::drawFrame() {
-  std::lock_guard<EngineMutex> engine(engineMutex());
   std::lock_guard<std::mutex> lock(mutex_);
   framePending_ = false;
   if (!canvas_ || !bindLocked()) return;

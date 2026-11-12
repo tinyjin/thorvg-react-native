@@ -25,11 +25,15 @@ std::mutex& tickerMutex() {
 }
 
 void tickAll(double now) {
-  std::lock_guard<EngineMutex> lock(engineMutex());
   auto epoch = wakeups.load();
-  auto players = active();
+  std::vector<std::shared_ptr<Player>> players;
+  {
+    std::lock_guard<EngineMutex> lock(engineMutex());
+    players = active();
+  }
   auto running = false;
   for (auto& player : players) {
+    std::lock_guard<EngineMutex> lock(engineMutex());
     running = running || player->visible();
     player->tick(now);
   }

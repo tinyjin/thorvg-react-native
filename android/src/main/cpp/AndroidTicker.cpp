@@ -1,5 +1,3 @@
-#include "AndroidTicker.h"
-
 #include "ThorVGTicker.h"
 
 #include <android/choreographer.h>

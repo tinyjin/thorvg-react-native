@@ -2,9 +2,14 @@
 
 #import <QuartzCore/QuartzCore.h>
 
+#include <mutex>
+#include <vector>
+
 namespace {
 
 std::function<void(double)> gTick;
+std::mutex gTasksMutex;
+std::vector<std::function<void()>> gTasks;
 
 }
 
@@ -38,6 +43,16 @@ std::function<void(double)> gTick;
   self.link.paused = !active.boolValue;
 }
 
+- (void)drain
+{
+  std::vector<std::function<void()>> tasks;
+  {
+    std::lock_guard<std::mutex> lock(gTasksMutex);
+    tasks.swap(gTasks);
+  }
+  for (auto &task : tasks) task();
+}
+
 @end
 
 namespace thorvg::rn {
@@ -67,6 +82,17 @@ void setTickerActive(bool active)
 {
   auto *ticker = thread();
   [ticker performSelector:@selector(setActive:) onThread:ticker withObject:@(active) waitUntilDone:NO];
+}
+
+void runOnRenderThread(std::function<void()> task)
+{
+  {
+    std::lock_guard<std::mutex> lock(gTasksMutex);
+    gTasks.push_back(std::move(task));
+    if (gTasks.size() > 1) return;
+  }
+  auto *ticker = thread();
+  [ticker performSelector:@selector(drain) onThread:ticker withObject:nil waitUntilDone:NO];
 }
 
 }

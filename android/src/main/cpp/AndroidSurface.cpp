@@ -4,7 +4,7 @@
 #include <cstring>
 #include <vector>
 
-#include "AndroidTicker.h"
+#include "ThorVGTicker.h"
 
 namespace thorvg::rn {
 
