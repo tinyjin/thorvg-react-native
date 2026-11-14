@@ -179,7 +179,9 @@ export function LottieView({
 
   useEffect(() => {
     if (!TVG) return;
-    const canvas = new TVG.Canvas(view);
+    const canvas = new TVG.Canvas(view, {
+      engineOption: TVG.EngineOption.None,
+    });
     state.current = {
       canvas,
       animation: null,

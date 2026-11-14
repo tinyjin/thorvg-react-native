@@ -89,7 +89,9 @@ export function SvgView({
 
   useEffect(() => {
     if (!TVG) return;
-    const canvas = new TVG.Canvas(view);
+    const canvas = new TVG.Canvas(view, {
+      engineOption: TVG.EngineOption.None,
+    });
     const scene = new TVG.Scene();
     canvas.add(scene);
     state.current = {
