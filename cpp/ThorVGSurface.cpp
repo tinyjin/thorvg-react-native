@@ -220,36 +220,10 @@ Tvg_Result CanvasHost::resize(uint32_t width, uint32_t height, float layoutWidth
 Tvg_Result CanvasHost::render() {
   std::lock_guard<std::mutex> lock(mutex_);
   if (!canvas_) return TVG_RESULT_INSUFFICIENT_CONDITION;
-
-  if (gpu_) {
-    drawn_ = true;
-    requestFrameLocked();
-    return TVG_RESULT_SUCCESS;
-  }
-
-  if (buffer_.empty()) return TVG_RESULT_INSUFFICIENT_CONDITION;
-  auto result = tvg_canvas_draw(canvas_, true);
-  tvg_canvas_sync(canvas_);
+  if (!gpu_ && buffer_.empty()) return TVG_RESULT_INSUFFICIENT_CONDITION;
   drawn_ = true;
-  submitLocked();
-  return result;
-}
-
-Tvg_Result CanvasHost::renderNow() {
-  {
-    std::lock_guard<std::mutex> lock(mutex_);
-    if (!canvas_) return TVG_RESULT_INSUFFICIENT_CONDITION;
-    if (gpu_ && gpu_->renderer() != Renderer::Gl) {
-      drawn_ = true;
-      if (!bindLocked()) return TVG_RESULT_SUCCESS;
-      tvg_canvas_update(canvas_);
-      tvg_canvas_draw(canvas_, true);
-      tvg_canvas_sync(canvas_);
-      surface_->swap(frameLocked());
-      return TVG_RESULT_SUCCESS;
-    }
-  }
-  return render();
+  requestFrameLocked();
+  return TVG_RESULT_SUCCESS;
 }
 
 Tvg_Result CanvasHost::add(Tvg_Paint paint) {
@@ -267,8 +241,7 @@ Tvg_Result CanvasHost::remove(Tvg_Paint paint) {
 Tvg_Result CanvasHost::update() {
   std::lock_guard<std::mutex> lock(mutex_);
   if (!canvas_) return TVG_RESULT_INSUFFICIENT_CONDITION;
-  if (gpu_) return TVG_RESULT_SUCCESS;
-  return tvg_canvas_update(canvas_);
+  return TVG_RESULT_SUCCESS;
 }
 
 Tvg_Result CanvasHost::viewport(int32_t x, int32_t y, int32_t w, int32_t h) {
@@ -327,20 +300,38 @@ void CanvasHost::submitLocked() {
 void CanvasHost::requestFrameLocked() {
   if (framePending_) return;
   framePending_ = true;
-  gpu_->schedule([weak = weak_from_this()] {
+  auto task = [weak = weak_from_this()] {
     std::lock_guard<EngineMutex> engine(engineMutex());
     if (auto host = weak.lock()) host->drawFrame();
-  });
+  };
+  if (gpu_) {
+    gpu_->schedule(std::move(task));
+  } else {
+    runOnRenderThread(std::move(task));
+  }
 }
 
 void CanvasHost::drawFrame() {
   std::lock_guard<std::mutex> lock(mutex_);
   framePending_ = false;
-  if (!canvas_ || !bindLocked()) return;
+  if (canvas_) drawLocked();
+}
+
+Tvg_Result CanvasHost::drawLocked() {
+  if (gpu_) {
+    if (!bindLocked()) return TVG_RESULT_SUCCESS;
+  } else if (buffer_.empty()) {
+    return TVG_RESULT_INSUFFICIENT_CONDITION;
+  }
   tvg_canvas_update(canvas_);
-  tvg_canvas_draw(canvas_, true);
+  auto result = tvg_canvas_draw(canvas_, true);
   tvg_canvas_sync(canvas_);
-  surface_->swap(frameLocked());
+  if (gpu_) {
+    surface_->swap(frameLocked());
+  } else {
+    submitLocked();
+  }
+  return result;
 }
 
 bool CanvasHost::bindLocked() {

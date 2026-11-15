@@ -164,12 +164,7 @@ void Player::draw() {
   auto host = host_.lock();
   if (!host || !animation_) return;
   tvg_animation_set_frame(animation_, frame_);
-  if (host->renderer() == Renderer::Gl) {
-    host->render();
-  } else {
-    host->update();
-    host->renderNow();
-  }
+  host->render();
   if (frames_) emit("frame");
 }
 

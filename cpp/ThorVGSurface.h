@@ -88,7 +88,6 @@ class CanvasHost : public std::enable_shared_from_this<CanvasHost> {
 
   Tvg_Result resize(uint32_t width, uint32_t height, float layoutWidth, float layoutHeight);
   Tvg_Result render();
-  Tvg_Result renderNow();
   Tvg_Result add(Tvg_Paint paint);
   Tvg_Result remove(Tvg_Paint paint);
   Tvg_Result update();
@@ -103,6 +102,7 @@ class CanvasHost : public std::enable_shared_from_this<CanvasHost> {
   void applyViewportLocked();
   void requestFrameLocked();
   void drawFrame();
+  Tvg_Result drawLocked();
   Frame frameLocked() const { return {width_, height_, layoutWidth_, layoutHeight_}; }
 
   std::mutex mutex_;
