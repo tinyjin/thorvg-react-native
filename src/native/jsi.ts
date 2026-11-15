@@ -34,7 +34,6 @@ export interface ThorVGJSI {
   canvas_render(canvas: CanvasHandle): Result;
   tvg_canvas_add(canvas: CanvasHandle, paint: Handle): Result;
   tvg_canvas_remove(canvas: CanvasHandle, paint: Handle | null): Result;
-  tvg_canvas_update(canvas: CanvasHandle): Result;
   tvg_canvas_set_viewport(
     canvas: CanvasHandle,
     x: number,

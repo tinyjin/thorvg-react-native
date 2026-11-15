@@ -37,7 +37,6 @@ export class Canvas {
   #logicalWidth: number = 1;
   #logicalHeight: number = 1;
   #currentDPR: number = 1;
-  #needsUpdate: boolean = false;
   #unsubscribe: (() => void) | null = null;
   #target: CanvasTarget | null = null;
 
@@ -112,7 +111,6 @@ export class Canvas {
       return this;
     }
     this.#mainScene.add(paint);
-    this.#needsUpdate = true;
     return this;
   }
 
@@ -126,7 +124,6 @@ export class Canvas {
     } else {
       this.#mainScene.remove();
     }
-    this.#needsUpdate = true;
     return this;
   }
 
@@ -140,10 +137,6 @@ export class Canvas {
   }
 
   public update(): this {
-    if (!this.#handle) {
-      return this;
-    }
-    checkResult(getJSI().tvg_canvas_update(this.#handle), 'update');
     return this;
   }
 
@@ -153,11 +146,6 @@ export class Canvas {
     }
 
     const jsi = getJSI();
-
-    if (this.#needsUpdate) {
-      jsi.tvg_canvas_update(this.#handle);
-      this.#needsUpdate = false;
-    }
 
     if (this.#enableDevicePixelRatio) {
       const dpr = devicePixelRatio();

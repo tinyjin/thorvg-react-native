@@ -730,11 +730,6 @@ void installCanvas(Builder& b) {
     return jsi::Value(static_cast<int>(host ? host->remove(paint) : TVG_RESULT_INSUFFICIENT_CONDITION));
   });
 
-  b.fn("tvg_canvas_update", 1, [](jsi::Runtime& rt, const jsi::Value&, Args args, size_t count) {
-    auto host = canvasHost(rt, at(args, count, 0));
-    return jsi::Value(static_cast<int>(host ? host->update() : TVG_RESULT_INSUFFICIENT_CONDITION));
-  });
-
   b.fn("tvg_canvas_set_viewport", 5, [](jsi::Runtime& rt, const jsi::Value&, Args args, size_t count) {
     auto host = canvasHost(rt, at(args, count, 0));
     if (!host) return jsi::Value(static_cast<int>(TVG_RESULT_INSUFFICIENT_CONDITION));

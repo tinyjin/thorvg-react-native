@@ -123,7 +123,6 @@ export function LottieView({
     const current = state.current;
     const picture = current?.info ? current.animation?.picture : null;
     if (!current || !picture) return;
-    if (!picture) return;
     const placement = place(
       current.layout,
       current.size,

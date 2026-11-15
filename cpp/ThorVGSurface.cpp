@@ -156,7 +156,6 @@ void Gpu::schedule(std::function<void()> task) { runOnRenderThread(std::move(tas
 
 void Gpu::release(Tvg_Canvas canvas, std::shared_ptr<Surface> surface) {
   bind(surface.get());
-  tvg_canvas_sync(canvas);
   tvg_canvas_destroy(canvas);
 }
 
@@ -180,7 +179,6 @@ CanvasHost::~CanvasHost() {
     if (gpu_) {
       gpu_->release(canvas_, surface_);
     } else {
-      tvg_canvas_sync(canvas_);
       tvg_canvas_destroy(canvas_);
     }
     canvas_ = nullptr;
@@ -209,9 +207,7 @@ Tvg_Result CanvasHost::resize(uint32_t width, uint32_t height, float layoutWidth
     return TVG_RESULT_SUCCESS;
   }
 
-  tvg_canvas_sync(canvas_);
   buffer_.assign(static_cast<size_t>(width) * height, 0);
-  drawn_ = false;
   auto result = tvg_swcanvas_set_target(canvas_, buffer_.data(), width, width, height, kColorspace);
   if (result == TVG_RESULT_SUCCESS) applyViewportLocked();
   return result;
@@ -236,12 +232,6 @@ Tvg_Result CanvasHost::remove(Tvg_Paint paint) {
   std::lock_guard<std::mutex> lock(mutex_);
   if (!canvas_) return TVG_RESULT_INSUFFICIENT_CONDITION;
   return tvg_canvas_remove(canvas_, paint);
-}
-
-Tvg_Result CanvasHost::update() {
-  std::lock_guard<std::mutex> lock(mutex_);
-  if (!canvas_) return TVG_RESULT_INSUFFICIENT_CONDITION;
-  return TVG_RESULT_SUCCESS;
 }
 
 Tvg_Result CanvasHost::viewport(int32_t x, int32_t y, int32_t w, int32_t h) {
@@ -339,7 +329,6 @@ bool CanvasHost::bindLocked() {
   gpu_->bind(surface_.get());
   if (!surface_ || width_ == 0 || height_ == 0) return false;
   if (!targeted_) {
-    tvg_canvas_sync(canvas_);
     targeted_ = surface_->target(canvas_, width_, height_) == TVG_RESULT_SUCCESS;
     if (!targeted_) return false;
     bound_ = surface_;

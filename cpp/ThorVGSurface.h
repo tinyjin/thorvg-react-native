@@ -90,7 +90,6 @@ class CanvasHost : public std::enable_shared_from_this<CanvasHost> {
   Tvg_Result render();
   Tvg_Result add(Tvg_Paint paint);
   Tvg_Result remove(Tvg_Paint paint);
-  Tvg_Result update();
   Tvg_Result viewport(int32_t x, int32_t y, int32_t w, int32_t h);
 
   void attach(std::shared_ptr<Surface> surface);
