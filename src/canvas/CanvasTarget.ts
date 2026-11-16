@@ -55,9 +55,9 @@ export function unbindCanvas(target: CanvasTarget, canvas: Canvas): void {
 export class CanvasTarget {
   readonly surfaceId: number;
   element: unknown = null;
-  #width = 0;
-  #height = 0;
-  #listeners = new Set<LayoutListener>();
+  private _width = 0;
+  private _height = 0;
+  private _listeners = new Set<LayoutListener>();
 
   constructor(surfaceId: number) {
     this.surfaceId = surfaceId;
@@ -68,24 +68,24 @@ export class CanvasTarget {
   }
 
   get width(): number {
-    return this.#width;
+    return this._width;
   }
 
   get height(): number {
-    return this.#height;
+    return this._height;
   }
 
   layout(width: number, height: number): void {
-    if (width === this.#width && height === this.#height) return;
-    this.#width = width;
-    this.#height = height;
-    for (const listener of [...this.#listeners]) listener(width, height);
+    if (width === this._width && height === this._height) return;
+    this._width = width;
+    this._height = height;
+    for (const listener of [...this._listeners]) listener(width, height);
   }
 
   subscribe(listener: LayoutListener): () => void {
-    this.#listeners.add(listener);
+    this._listeners.add(listener);
     return () => {
-      this.#listeners.delete(listener);
+      this._listeners.delete(listener);
     };
   }
 }

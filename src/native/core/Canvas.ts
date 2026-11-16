@@ -30,15 +30,16 @@ function devicePixelRatio(): number {
 }
 
 export class Canvas {
-  #handle: CanvasHandle | null = null;
-  #renderer: Renderer = 'sw';
-  #mainScene: Scene | null = null;
-  #enableDevicePixelRatio: boolean = true;
-  #logicalWidth: number = 1;
-  #logicalHeight: number = 1;
-  #currentDPR: number = 1;
-  #unsubscribe: (() => void) | null = null;
-  #target: CanvasTarget | null = null;
+  /** @internal */
+  public _handle: CanvasHandle | null = null;
+  private _renderer: Renderer = 'sw';
+  private _mainScene: Scene | null = null;
+  private _enableDevicePixelRatio: boolean = true;
+  private _logicalWidth: number = 1;
+  private _logicalHeight: number = 1;
+  private _currentDPR: number = 1;
+  private _unsubscribe: (() => void) | null = null;
+  private _target: CanvasTarget | null = null;
 
   constructor(target: CanvasTarget | CanvasRef, options: CanvasOptions = {}) {
     const surface = resolveTarget(target);
@@ -54,9 +55,9 @@ export class Canvas {
       engineOption = EngineOption.Default,
     } = options;
 
-    this.#logicalWidth = width ?? Math.max(1, surface.width);
-    this.#logicalHeight = height ?? Math.max(1, surface.height);
-    this.#enableDevicePixelRatio = enableDevicePixelRatio;
+    this._logicalWidth = width ?? Math.max(1, surface.width);
+    this._logicalHeight = height ?? Math.max(1, surface.height);
+    this._enableDevicePixelRatio = enableDevicePixelRatio;
 
     const jsi = getJSI();
     const handle = jsi.canvas_create(
@@ -71,68 +72,68 @@ export class Canvas {
       );
       return;
     }
-    this.#handle = handle;
-    this.#renderer = jsi.canvas_renderer(handle) as Renderer;
-    if (__DEV__ && !warnedFallback && this.#renderer !== preferredRenderer) {
+    this._handle = handle;
+    this._renderer = jsi.canvas_renderer(handle) as Renderer;
+    if (__DEV__ && !warnedFallback && this._renderer !== preferredRenderer) {
       warnedFallback = true;
       console.warn(
-        `ThorVG: the '${preferredRenderer}' renderer is not available, falling back to '${this.#renderer}'.`
+        `ThorVG: the '${preferredRenderer}' renderer is not available, falling back to '${this._renderer}'.`
       );
     }
 
-    this.#currentDPR = enableDevicePixelRatio ? devicePixelRatio() : 1;
-    this.#applySize();
+    this._currentDPR = enableDevicePixelRatio ? devicePixelRatio() : 1;
+    this._applySize();
 
-    this.#mainScene = new Scene();
+    this._mainScene = new Scene();
     if (enableDevicePixelRatio) {
-      this.#mainScene.scale(this.#currentDPR);
+      this._mainScene.scale(this._currentDPR);
     }
     checkResult(
-      jsi.tvg_canvas_add(handle, this.#mainScene.handle),
+      jsi.tvg_canvas_add(handle, this._mainScene.handle),
       'add main scene'
     );
-    jsi.tvg_paint_ref(this.#mainScene.handle);
+    jsi.tvg_paint_ref(this._mainScene.handle);
 
-    this.#target = surface;
+    this._target = surface;
     bindCanvas(surface, this as unknown as WebCanvas);
 
     if (width !== undefined && height !== undefined) {
       setDrawingSize(surface, { width, height });
     } else {
-      this.#unsubscribe = surface.subscribe((w, h) => {
+      this._unsubscribe = surface.subscribe((w, h) => {
         this.resize(width ?? w, height ?? h).render();
       });
     }
   }
 
   public add(paint: Paint): this {
-    if (!this.#mainScene) {
+    if (!this._mainScene) {
       handleError('Main scene not initialized', 'add');
       return this;
     }
-    this.#mainScene.add(paint);
+    this._mainScene.add(paint);
     return this;
   }
 
   public remove(paint?: Paint): this {
-    if (!this.#mainScene) {
+    if (!this._mainScene) {
       handleError('Main scene not initialized', 'remove');
       return this;
     }
     if (paint) {
-      this.#mainScene.remove(paint);
+      this._mainScene.remove(paint);
     } else {
-      this.#mainScene.remove();
+      this._mainScene.remove();
     }
     return this;
   }
 
   public clear(): this {
-    if (!this.#handle || !this.#mainScene) {
+    if (!this._handle || !this._mainScene) {
       return this;
     }
-    this.#mainScene.clear();
-    getJSI().canvas_render(this.#handle);
+    this._mainScene.clear();
+    getJSI().canvas_render(this._handle);
     return this;
   }
 
@@ -141,17 +142,17 @@ export class Canvas {
   }
 
   public render(): this {
-    if (!this.#handle || !this.#mainScene) {
+    if (!this._handle || !this._mainScene) {
       return this;
     }
 
     const jsi = getJSI();
 
-    if (this.#enableDevicePixelRatio) {
+    if (this._enableDevicePixelRatio) {
       const dpr = devicePixelRatio();
-      if (dpr !== this.#currentDPR) {
-        this.#currentDPR = dpr;
-        this.#mainScene.transform({
+      if (dpr !== this._currentDPR) {
+        this._currentDPR = dpr;
+        this._mainScene.transform({
           e11: dpr,
           e12: 0,
           e13: 0,
@@ -162,29 +163,29 @@ export class Canvas {
           e32: 0,
           e33: 1,
         });
-        this.#applySize();
+        this._applySize();
       }
     }
 
-    jsi.canvas_render(this.#handle);
+    jsi.canvas_render(this._handle);
     return this;
   }
 
   public resize(width: number, height: number): this {
-    this.#logicalWidth = width;
-    this.#logicalHeight = height;
-    this.#applySize();
+    this._logicalWidth = width;
+    this._logicalHeight = height;
+    this._applySize();
     return this;
   }
 
   public viewport(x: number, y: number, w: number, h: number): this {
-    if (!this.#handle) {
+    if (!this._handle) {
       return this;
     }
-    const dpr = this.#enableDevicePixelRatio ? this.#currentDPR : 1;
+    const dpr = this._enableDevicePixelRatio ? this._currentDPR : 1;
     checkResult(
       getJSI().tvg_canvas_set_viewport(
-        this.#handle,
+        this._handle,
         x * dpr,
         y * dpr,
         w * dpr,
@@ -196,50 +197,45 @@ export class Canvas {
   }
 
   public destroy(): void {
-    this.#unsubscribe?.();
-    this.#unsubscribe = null;
-    if (this.#target) {
-      if (this.#target.canvas === (this as unknown as WebCanvas)) {
-        setDrawingSize(this.#target, null);
+    this._unsubscribe?.();
+    this._unsubscribe = null;
+    if (this._target) {
+      if (this._target.canvas === (this as unknown as WebCanvas)) {
+        setDrawingSize(this._target, null);
       }
-      unbindCanvas(this.#target, this as unknown as WebCanvas);
-      this.#target = null;
+      unbindCanvas(this._target, this as unknown as WebCanvas);
+      this._target = null;
     }
-    if (this.#mainScene) {
-      this.#mainScene.clear();
-      this.#mainScene.dispose();
-      this.#mainScene = null;
+    if (this._mainScene) {
+      this._mainScene.clear();
+      this._mainScene.dispose();
+      this._mainScene = null;
     }
-    if (this.#handle) {
-      getJSI().canvas_destroy(this.#handle);
-      this.#handle = null;
+    if (this._handle) {
+      getJSI().canvas_destroy(this._handle);
+      this._handle = null;
     }
-  }
-
-  /** @internal */
-  public get _handle(): CanvasHandle | null {
-    return this.#handle;
   }
 
   public get renderer(): string {
-    return this.#renderer;
+    return this._renderer;
   }
 
   public get dpr(): number {
-    return this.#currentDPR;
+    return this._currentDPR;
   }
 
-  #applySize(): void {
-    if (!this.#handle) return;
-    const dpr = this.#enableDevicePixelRatio ? this.#currentDPR : 1;
-    const width = Math.max(1, Math.floor(this.#logicalWidth * dpr));
-    const height = Math.max(1, Math.floor(this.#logicalHeight * dpr));
+  private _applySize(): void {
+    if (!this._handle) return;
+    const dpr = this._enableDevicePixelRatio ? this._currentDPR : 1;
+    const width = Math.max(1, Math.floor(this._logicalWidth * dpr));
+    const height = Math.max(1, Math.floor(this._logicalHeight * dpr));
     getJSI().canvas_resize(
-      this.#handle,
+      this._handle,
       width,
       height,
-      this.#logicalWidth,
-      this.#logicalHeight
+      this._logicalWidth,
+      this._logicalHeight
     );
   }
 }

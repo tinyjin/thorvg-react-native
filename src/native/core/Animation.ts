@@ -5,14 +5,14 @@ import { checkResult, handleError, ThorVGResultCode } from '../errors';
 import { getJSI, type Handle } from '../jsi';
 
 export class Animation extends NativeObject {
-  #picture: Picture | null = null;
-  #info: AnimationInfo | null = null;
-  #isPlaying = false;
-  #currentFrame = 0;
-  #animationFrameId: number | null = null;
-  #lastTime = 0;
-  #onFrame?: (frame: number) => void;
-  #loop = true;
+  private _picture: Picture | null = null;
+  private _info: AnimationInfo | null = null;
+  private _isPlaying = false;
+  private _currentFrame = 0;
+  private _animationFrameId: number | null = null;
+  private _lastTime = 0;
+  private _onFrame?: (frame: number) => void;
+  private _loop = true;
 
   constructor(handle?: Handle) {
     super(handle ?? getJSI().tvg_animation_new());
@@ -23,14 +23,14 @@ export class Animation extends NativeObject {
   }
 
   public get picture(): Picture | null {
-    if (!this.#picture && !this.isDisposed) {
+    if (!this._picture && !this.isDisposed) {
       const handle = getJSI().tvg_animation_get_picture(this.handle);
       if (handle) {
-        this.#picture = new Picture(handle);
-        this.#picture._owner = this;
+        this._picture = new Picture(handle);
+        this._picture._owner = this;
       }
     }
-    return this.#picture;
+    return this._picture;
   }
 
   public load(data: Uint8Array | string): this {
@@ -41,19 +41,19 @@ export class Animation extends NativeObject {
     }
 
     picture.load(data, { type: 'lot' });
-    this.#updateInfo();
+    this._updateInfo();
     return this;
   }
 
   public info(): AnimationInfo | null {
-    return this.#info;
+    return this._info;
   }
 
   public frame(): number;
   public frame(frameNumber: number): this;
   public frame(frameNumber?: number): number | this {
     if (frameNumber !== undefined) {
-      this.#currentFrame = frameNumber;
+      this._currentFrame = frameNumber;
       const result = getJSI().tvg_animation_set_frame(this.handle, frameNumber);
       if (
         result !== ThorVGResultCode.Success &&
@@ -63,7 +63,7 @@ export class Animation extends NativeObject {
       }
       return this;
     }
-    return this.#currentFrame;
+    return this._currentFrame;
   }
 
   public segment(begin: number, end: number): this {
@@ -75,27 +75,27 @@ export class Animation extends NativeObject {
   }
 
   public play(onFrame?: (frame: number) => void): this {
-    if (this.#isPlaying) {
+    if (this._isPlaying) {
       return this;
     }
 
-    if (!this.#info) {
+    if (!this._info) {
       handleError('No animation loaded', 'play');
       return this;
     }
 
-    this.#isPlaying = true;
-    this.#onFrame = onFrame;
-    this.#lastTime = 0;
-    this.#animate(performance.now());
+    this._isPlaying = true;
+    this._onFrame = onFrame;
+    this._lastTime = 0;
+    this._animate(performance.now());
     return this;
   }
 
   public pause(): this {
-    this.#isPlaying = false;
-    if (this.#animationFrameId !== null) {
-      cancelAnimationFrame(this.#animationFrameId);
-      this.#animationFrameId = null;
+    this._isPlaying = false;
+    if (this._animationFrameId !== null) {
+      cancelAnimationFrame(this._animationFrameId);
+      this._animationFrameId = null;
     }
     return this;
   }
@@ -107,33 +107,33 @@ export class Animation extends NativeObject {
   }
 
   public isPlaying(): boolean {
-    return this.#isPlaying;
+    return this._isPlaying;
   }
 
   public setLoop(loop: boolean): this {
-    this.#loop = loop;
+    this._loop = loop;
     return this;
   }
 
   public getLoop(): boolean {
-    return this.#loop;
+    return this._loop;
   }
 
   public seek(time: number): this {
-    if (!this.#info) {
+    if (!this._info) {
       handleError('No animation loaded', 'seek');
       return this;
     }
-    const frame = (time / this.#info.duration) * this.#info.totalFrames;
-    this.frame(Math.max(0, Math.min(this.#info.totalFrames - 1, frame)));
+    const frame = (time / this._info.duration) * this._info.totalFrames;
+    this.frame(Math.max(0, Math.min(this._info.totalFrames - 1, frame)));
     return this;
   }
 
   public getCurrentTime(): number {
-    if (!this.#info) {
+    if (!this._info) {
       return 0;
     }
-    return (this.#currentFrame / this.#info.totalFrames) * this.#info.duration;
+    return (this._currentFrame / this._info.totalFrames) * this._info.duration;
   }
 
   public override dispose(): void {
@@ -142,13 +142,13 @@ export class Animation extends NativeObject {
     }
 
     this.pause();
-    this.#info = null;
+    this._info = null;
 
-    if (this.#picture) {
-      const picture = this.#picture;
+    if (this._picture) {
+      const picture = this._picture;
       picture.resolver(null);
       picture._owner = null;
-      this.#picture = null;
+      this._picture = null;
       for (; picture._retains > 0; picture._retains--) {
         getJSI().tvg_paint_unref(picture.handle, false);
       }
@@ -157,44 +157,44 @@ export class Animation extends NativeObject {
     super.dispose();
   }
 
-  #animate = (time: number): void => {
-    if (!this.#isPlaying || !this.#info) {
+  private _animate = (time: number): void => {
+    if (!this._isPlaying || !this._info) {
       return;
     }
 
-    if (this.#lastTime === 0) {
-      this.#lastTime = time;
+    if (this._lastTime === 0) {
+      this._lastTime = time;
     }
 
-    const deltaTime = (time - this.#lastTime) / 1000;
-    this.#lastTime = time;
+    const deltaTime = (time - this._lastTime) / 1000;
+    this._lastTime = time;
 
-    this.#currentFrame += this.#info.fps * deltaTime;
+    this._currentFrame += this._info.fps * deltaTime;
 
-    if (this.#currentFrame >= this.#info.totalFrames) {
-      if (this.#loop) {
-        this.#currentFrame = this.#currentFrame % this.#info.totalFrames;
+    if (this._currentFrame >= this._info.totalFrames) {
+      if (this._loop) {
+        this._currentFrame = this._currentFrame % this._info.totalFrames;
       } else {
-        this.#currentFrame = this.#info.totalFrames - 1;
+        this._currentFrame = this._info.totalFrames - 1;
         this.pause();
         return;
       }
     }
 
-    getJSI().tvg_animation_set_frame(this.handle, this.#currentFrame);
+    getJSI().tvg_animation_set_frame(this.handle, this._currentFrame);
 
-    if (this.#onFrame) {
-      this.#onFrame(this.#currentFrame);
+    if (this._onFrame) {
+      this._onFrame(this._currentFrame);
     }
 
-    this.#animationFrameId = requestAnimationFrame(this.#animate);
+    this._animationFrameId = requestAnimationFrame(this._animate);
   };
 
-  #updateInfo(): void {
+  private _updateInfo(): void {
     const jsi = getJSI();
     const totalFrames = jsi.tvg_animation_get_total_frame(this.handle);
     const duration = jsi.tvg_animation_get_duration(this.handle);
-    this.#info = {
+    this._info = {
       totalFrames,
       duration,
       fps: totalFrames / duration,

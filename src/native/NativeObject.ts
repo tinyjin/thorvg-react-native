@@ -2,36 +2,36 @@ import { handleError } from './errors';
 import { getJSI, type Handle } from './jsi';
 
 export abstract class NativeObject {
-  #handle: Handle | null;
-  #disposed: boolean = false;
+  private _handle: Handle | null;
+  private _disposed: boolean = false;
 
   constructor(handle: Handle | null) {
-    this.#handle = handle;
+    this._handle = handle;
   }
 
   public get handle(): Handle {
-    if (this.#disposed || !this.#handle) {
+    if (this._disposed || !this._handle) {
       handleError('Object has been disposed', 'handle getter');
     }
-    return this.#handle as Handle;
+    return this._handle as Handle;
   }
 
   public get ptr(): number {
-    if (this.#disposed) {
+    if (this._disposed) {
       handleError('Object has been disposed', 'ptr getter');
       return 0;
     }
-    return this.#handle ? getJSI().address(this.#handle) : 0;
+    return this._handle ? getJSI().address(this._handle) : 0;
   }
 
   public dispose(): void {
-    if (this.#disposed) {
+    if (this._disposed) {
       return;
     }
-    this.#disposed = true;
+    this._disposed = true;
 
-    const handle = this.#handle;
-    this.#handle = null;
+    const handle = this._handle;
+    this._handle = null;
     if (handle) {
       getJSI().disown(handle);
       this._cleanup(handle);
@@ -39,7 +39,7 @@ export abstract class NativeObject {
   }
 
   public get isDisposed(): boolean {
-    return this.#disposed;
+    return this._disposed;
   }
 
   protected abstract _cleanup(handle: Handle): void;

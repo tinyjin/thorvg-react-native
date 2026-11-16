@@ -55,7 +55,7 @@ function changed(props: Props, prev: Props | null, ...keys: string[]): boolean {
 
 export class Container {
   readonly root: RootNode;
-  #scheduled = false;
+  private _scheduled = false;
 
   constructor(
     readonly TVG: ThorVG,
@@ -65,10 +65,10 @@ export class Container {
   }
 
   requestRender(): void {
-    if (this.#scheduled) return;
-    this.#scheduled = true;
+    if (this._scheduled) return;
+    this._scheduled = true;
     requestAnimationFrame(() => {
-      this.#scheduled = false;
+      this._scheduled = false;
       this.canvas.update().render();
     });
   }
@@ -289,7 +289,7 @@ const GEOMETRY = {
 
 export class ShapeNode extends PaintNode<ShapeProps> {
   readonly paint: Shape;
-  #props: ShapeProps = {};
+  private _props: ShapeProps = {};
 
   constructor(
     container: Container,
@@ -301,7 +301,7 @@ export class ShapeNode extends PaintNode<ShapeProps> {
 
   update(props: Props, prev: Props | null): void {
     const next = props as ShapeProps;
-    this.#props = next;
+    this._props = next;
     this.applyPaint(next, prev as ShapeProps | null);
     const p = props;
     const q = prev;
@@ -354,15 +354,15 @@ export class ShapeNode extends PaintNode<ShapeProps> {
     if (gradient) {
       this.paint.fill(gradient);
     } else {
-      const [r, g, b, a] = this.#props.fill
-        ? rgba(this.#props.fill)
+      const [r, g, b, a] = this._props.fill
+        ? rgba(this._props.fill)
         : [0, 0, 0, 0];
       this.paint.fill(r, g, b, a);
     }
   }
 
   private applyStroke(): void {
-    const stroke = this.#props.stroke;
+    const stroke = this._props.stroke;
     const options = typeof stroke === 'number' ? { width: stroke } : stroke;
     const gradient = this.gradient(true);
     if (!options && !gradient) {
@@ -493,7 +493,7 @@ function nextPaint(parent: Node, before: Node | null): PaintNode | null {
 
 export class PictureNode extends PaintNode<PictureProps> {
   paint: Picture;
-  #loaded = false;
+  private _loaded = false;
 
   constructor(container: Container) {
     super(container);
@@ -503,7 +503,7 @@ export class PictureNode extends PaintNode<PictureProps> {
   update(props: Props, prev: Props | null): void {
     const next = props as PictureProps;
     const reload = changed(props, prev, 'data', 'options');
-    if (reload && this.#loaded) {
+    if (reload && this._loaded) {
       const old = this.paint;
       this.paint = new this.TVG.Picture();
       this.prepare(next);
@@ -534,13 +534,13 @@ export class PictureNode extends PaintNode<PictureProps> {
   private load(props: PictureProps): void {
     if (props.data === undefined) return;
     this.paint.load(props.data, props.options);
-    this.#loaded = true;
+    this._loaded = true;
   }
 }
 
 export class TextNode extends PaintNode<TextProps> {
   readonly paint: Text;
-  #props: TextProps = {};
+  private _props: TextProps = {};
 
   constructor(container: Container) {
     super(container);
@@ -549,7 +549,7 @@ export class TextNode extends PaintNode<TextProps> {
 
   update(props: Props, prev: Props | null): void {
     const next = props as TextProps;
-    this.#props = next;
+    this._props = next;
     this.applyPaint(next, prev as TextProps | null);
     const q = prev;
     if (changed(props, q, 'font') && next.font) this.paint.font(next.font);
@@ -589,7 +589,7 @@ export class TextNode extends PaintNode<TextProps> {
     if (gradient) {
       this.paint.fill(gradient);
     } else {
-      const [r, g, b] = this.#props.fill ? rgba(this.#props.fill) : [0, 0, 0];
+      const [r, g, b] = this._props.fill ? rgba(this._props.fill) : [0, 0, 0];
       this.paint.fill(r, g, b);
     }
   }
@@ -597,9 +597,9 @@ export class TextNode extends PaintNode<TextProps> {
 
 export class AnimationNode extends PaintNode<LottieAnimationProps> {
   animation: Animation | LottieAnimation;
-  #loaded = false;
-  #props: LottieAnimationProps = {};
-  #slot: number | null = null;
+  private _loaded = false;
+  private _props: LottieAnimationProps = {};
+  private _slot: number | null = null;
 
   constructor(
     container: Container,
@@ -624,10 +624,10 @@ export class AnimationNode extends PaintNode<LottieAnimationProps> {
 
   update(props: Props, prev: Props | null): void {
     const next = props as LottieAnimationProps;
-    this.#props = next;
+    this._props = next;
     const q = prev;
     const reload = changed(props, q, 'data') && next.data !== undefined;
-    const old = reload && this.#loaded ? this.paint : null;
+    const old = reload && this._loaded ? this.paint : null;
     if (old) {
       this.animation.pause();
       this.animation = this.create();
@@ -638,9 +638,9 @@ export class AnimationNode extends PaintNode<LottieAnimationProps> {
       lottie.resolver(next.resolver ?? null);
     }
     if (reload) {
-      this.#slot = null;
+      this._slot = null;
       this.animation.load(next.data as Uint8Array | string);
-      this.#loaded = true;
+      this._loaded = true;
     }
     if (old) this.replaced(old, props);
     else this.applyPaint(next, prev as LottieAnimationProps | null);
@@ -649,9 +649,9 @@ export class AnimationNode extends PaintNode<LottieAnimationProps> {
     }
     if (lottie) {
       if ((reload || changed(props, q, 'slot')) && next.slot !== undefined) {
-        if (this.#slot !== null) lottie.del(this.#slot);
-        this.#slot = lottie.gen(next.slot);
-        lottie.apply(this.#slot);
+        if (this._slot !== null) lottie.del(this._slot);
+        this._slot = lottie.gen(next.slot);
+        lottie.apply(this._slot);
       }
       if (
         (reload || changed(props, q, 'quality')) &&
@@ -676,7 +676,7 @@ export class AnimationNode extends PaintNode<LottieAnimationProps> {
     if (reload || changed(props, q, 'playing')) {
       if (next.playing) {
         this.animation.play((frame) => {
-          this.#props.onFrame?.(frame);
+          this._props.onFrame?.(frame);
           this.container.requestRender();
         });
       } else {
@@ -702,7 +702,7 @@ export class AnimationNode extends PaintNode<LottieAnimationProps> {
 }
 
 export class GradientNode extends Node {
-  #props: Props = {};
+  private _props: Props = {};
 
   constructor(
     container: Container,
@@ -716,11 +716,11 @@ export class GradientNode extends Node {
   }
 
   get stroke(): boolean {
-    return !!(this.#props as GradientProps).stroke;
+    return !!(this._props as GradientProps).stroke;
   }
 
   update(props: Props, prev: Props | null): void {
-    this.#props = props;
+    this._props = props;
     if (prev) this.parent?.childChanged(this);
   }
 
@@ -728,16 +728,16 @@ export class GradientNode extends Node {
     const TVG = this.container.TVG;
     let fill: FillInstance;
     if (this.kind === 'linear') {
-      const p = this.#props as unknown as LinearGradientProps;
+      const p = this._props as unknown as LinearGradientProps;
       fill = new TVG.LinearGradient(p.x1, p.y1, p.x2, p.y2);
     } else if (this.kind === 'radial') {
-      const p = this.#props as unknown as RadialGradientProps;
+      const p = this._props as unknown as RadialGradientProps;
       fill = new TVG.RadialGradient(p.cx, p.cy, p.r, p.fx, p.fy, p.fr);
     } else {
-      const p = this.#props as unknown as ConicGradientProps;
+      const p = this._props as unknown as ConicGradientProps;
       fill = new TVG.ConicGradient(p.cx, p.cy, p.angle);
     }
-    const p = this.#props as GradientProps;
+    const p = this._props as GradientProps;
     if (p.stops?.length) {
       fill.setStops(
         ...p.stops.map(([offset, color]): [number, ColorStop] => [
@@ -784,7 +784,7 @@ export class MaskNode extends HolderNode {
 }
 
 export class FontNode extends Node {
-  #name: string | null = null;
+  private _name: string | null = null;
 
   get instance(): null {
     return null;
@@ -793,13 +793,13 @@ export class FontNode extends Node {
   update(props: Props, prev: Props | null): void {
     if (!changed(props, prev, 'name', 'data', 'type')) return;
     const next = props as unknown as FontProps;
-    if (this.#name) this.container.TVG.Font.unload(this.#name);
+    if (this._name) this.container.TVG.Font.unload(this._name);
     this.container.TVG.Font.load(next.name, next.data, { type: next.type });
-    this.#name = next.name;
+    this._name = next.name;
   }
 
   dispose(): void {
-    if (this.#name) this.container.TVG.Font.unload(this.#name);
-    this.#name = null;
+    if (this._name) this.container.TVG.Font.unload(this._name);
+    this._name = null;
   }
 }

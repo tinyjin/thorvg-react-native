@@ -28,8 +28,8 @@ function toAudioInfo(info: NativeAudioInfo): AudioInfo | null {
 }
 
 export class LottieAnimation extends Animation {
-  #resolver: AudioResolver | null = null;
-  #resolverId = 0;
+  private _resolver: AudioResolver | null = null;
+  private _resolverId = 0;
 
   constructor() {
     super(getJSI().tvg_lottie_animation_new());
@@ -37,7 +37,7 @@ export class LottieAnimation extends Animation {
 
   public override load(data: Uint8Array | string): this {
     super.load(data);
-    this.#attachAudio();
+    this._attachAudio();
     return this;
   }
 
@@ -121,8 +121,8 @@ export class LottieAnimation extends Animation {
   }
 
   public resolver(callback: AudioResolver | null): this {
-    this.#resolver = callback;
-    this.#attachAudio();
+    this._resolver = callback;
+    this._attachAudio();
     return this;
   }
 
@@ -130,32 +130,32 @@ export class LottieAnimation extends Animation {
     if (this.isDisposed) {
       return;
     }
-    if (this.#resolverId) {
+    if (this._resolverId) {
       getJSI().tvg_lottie_animation_set_audio_resolver(this.handle, 0);
-      unregisterCallback(this.#resolverId);
-      this.#resolverId = 0;
+      unregisterCallback(this._resolverId);
+      this._resolverId = 0;
     }
-    this.#resolver = null;
+    this._resolver = null;
     super.dispose();
   }
 
-  #attachAudio(): void {
+  private _attachAudio(): void {
     const jsi = getJSI();
 
-    if (!this.#resolver) {
-      if (this.#resolverId) {
+    if (!this._resolver) {
+      if (this._resolverId) {
         jsi.tvg_lottie_animation_set_audio_resolver(this.handle, 0);
-        unregisterCallback(this.#resolverId);
-        this.#resolverId = 0;
+        unregisterCallback(this._resolverId);
+        this._resolverId = 0;
       }
       return;
     }
 
-    if (!this.#resolverId) {
+    if (!this._resolverId) {
       const self = new WeakRef(this);
-      this.#resolverId = registerCallback((info: NativeAudioInfo) => {
+      this._resolverId = registerCallback((info: NativeAudioInfo) => {
         const animation = self.deref();
-        const resolver = animation ? animation.#resolver : null;
+        const resolver = animation ? animation._resolver : null;
         if (!resolver) return;
         const audio = toAudioInfo(info);
         if (audio) resolver(audio);
@@ -164,7 +164,7 @@ export class LottieAnimation extends Animation {
 
     const result = jsi.tvg_lottie_animation_set_audio_resolver(
       this.handle,
-      this.#resolverId
+      this._resolverId
     );
     if (
       result !== ThorVGResultCode.Success &&

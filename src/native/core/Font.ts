@@ -3,11 +3,11 @@ import { checkResult } from '../errors';
 import { getJSI } from '../jsi';
 
 export class Font {
-  static #provider: FontProvider | null = null;
-  static readonly #loaded = new Set<string>();
+  private static _provider: FontProvider | null = null;
+  private static readonly _loaded = new Set<string>();
 
   public static provider(provider: FontProvider): void {
-    Font.#provider = provider;
+    Font._provider = provider;
   }
 
   public static load(
@@ -25,15 +25,15 @@ export class Font {
     loadOptions?: LoadFontOptions
   ): void | Promise<void> {
     if (dataOrOptions instanceof Uint8Array) {
-      Font.#loadData(name, dataOrOptions, loadOptions);
+      Font._loadData(name, dataOrOptions, loadOptions);
       return;
     }
 
-    if (Font.#loaded.has(name)) {
+    if (Font._loaded.has(name)) {
       return Promise.resolve();
     }
 
-    const provider = Font.#provider;
+    const provider = Font._provider;
     if (!provider) {
       return Promise.reject(
         new Error(
@@ -42,27 +42,27 @@ export class Font {
       );
     }
 
-    Font.#loaded.add(name);
+    Font._loaded.add(name);
     return provider
       .fetch(name, dataOrOptions)
       .then((result) => {
-        Font.#loadData(name, result.data, { type: result.type });
+        Font._loadData(name, result.data, { type: result.type });
       })
       .catch((err) => {
-        Font.#loaded.delete(name);
+        Font._loaded.delete(name);
         throw err;
       });
   }
 
   public static unload(name: string): void {
-    Font.#loaded.delete(name);
+    Font._loaded.delete(name);
     checkResult(
       getJSI().tvg_font_load_data(name, null, null),
       `Font.unload("${name}")`
     );
   }
 
-  static #loadData(
+  private static _loadData(
     name: string,
     data: Uint8Array,
     options: LoadFontOptions = {}

@@ -9,9 +9,9 @@ export type AssetResolver = (paint: Paint, src: string) => boolean;
 
 export class Picture extends Paint {
   public _owner: object | null = null;
-  #resolver: AssetResolver | null = null;
-  #resolverId = 0;
-  #accessible = false;
+  private _resolver: AssetResolver | null = null;
+  private _resolverId = 0;
+  private _accessible = false;
 
   constructor(handle?: Handle) {
     super(handle ?? getJSI().tvg_picture_new());
@@ -22,7 +22,7 @@ export class Picture extends Paint {
   }
 
   public get accessible(): boolean {
-    return this.#accessible;
+    return this._accessible;
   }
 
   public set accessible(value: boolean) {
@@ -30,14 +30,14 @@ export class Picture extends Paint {
       getJSI().tvg_picture_set_accessible(this.handle, value),
       'accessible'
     );
-    this.#accessible = value;
+    this._accessible = value;
   }
 
   public resolver(callback: AssetResolver | null): this {
     const jsi = getJSI();
 
-    this.#releaseResolver();
-    this.#resolver = callback;
+    this._releaseResolver();
+    this._resolver = callback;
 
     if (!callback) {
       const result = jsi.tvg_picture_set_asset_resolver(this.handle, 0);
@@ -51,9 +51,9 @@ export class Picture extends Paint {
     }
 
     const self = new WeakRef(this);
-    this.#resolverId = registerCallback((handle: Handle, src: string) => {
+    this._resolverId = registerCallback((handle: Handle, src: string) => {
       const picture = self.deref();
-      const resolver = picture ? picture.#resolver : null;
+      const resolver = picture ? picture._resolver : null;
       if (!resolver) return false;
       try {
         return resolver(Paint.fromHandle(handle), src);
@@ -62,15 +62,15 @@ export class Picture extends Paint {
       }
     });
     checkResult(
-      jsi.tvg_picture_set_asset_resolver(this.handle, this.#resolverId),
+      jsi.tvg_picture_set_asset_resolver(this.handle, this._resolverId),
       'resolver'
     );
     return this;
   }
 
   public override dispose(): void {
-    this.#releaseResolver();
-    this.#resolver = null;
+    this._releaseResolver();
+    this._resolver = null;
     this._owner = null;
     super.dispose();
   }
@@ -140,10 +140,10 @@ export class Picture extends Paint {
     return this;
   }
 
-  #releaseResolver(): void {
-    if (this.#resolverId) {
-      unregisterCallback(this.#resolverId);
-      this.#resolverId = 0;
+  private _releaseResolver(): void {
+    if (this._resolverId) {
+      unregisterCallback(this._resolverId);
+      this._resolverId = 0;
     }
   }
 }
