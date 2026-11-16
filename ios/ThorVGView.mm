@@ -27,6 +27,7 @@ using namespace facebook::react;
 @interface ThorVGHostView : UIView
 @property (nonatomic, readonly) CALayer *contentLayer;
 @property (nonatomic, readonly) ThorVGMetalView *metalView;
+- (void)resetLayers;
 @end
 
 @implementation ThorVGHostView
@@ -37,24 +38,40 @@ using namespace facebook::react;
     self.userInteractionEnabled = NO;
     self.backgroundColor = UIColor.clearColor;
     self.clipsToBounds = YES;
-
-    _contentLayer = [CALayer layer];
-    [self.layer addSublayer:_contentLayer];
-
-    _metalView = [[ThorVGMetalView alloc] initWithFrame:self.bounds];
-    _metalView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-    _metalView.backgroundColor = UIColor.clearColor;
-    _metalView.layer.hidden = YES;
-
-    CAMetalLayer *layer = (CAMetalLayer *)_metalView.layer;
-    layer.device = MTLCreateSystemDefaultDevice();
-    layer.pixelFormat = MTLPixelFormatBGRA8Unorm;
-    layer.framebufferOnly = NO;
-    layer.opaque = NO;
-
-    [self addSubview:_metalView];
+    [self addLayers];
   }
   return self;
+}
+
+- (void)addLayers
+{
+  static id<MTLDevice> device = MTLCreateSystemDefaultDevice();
+
+  _contentLayer = [CALayer layer];
+  [self.layer addSublayer:_contentLayer];
+
+  _metalView = [[ThorVGMetalView alloc] initWithFrame:self.bounds];
+  _metalView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+  _metalView.backgroundColor = UIColor.clearColor;
+  _metalView.layer.hidden = YES;
+
+  CAMetalLayer *layer = (CAMetalLayer *)_metalView.layer;
+  layer.device = device;
+  layer.pixelFormat = MTLPixelFormatBGRA8Unorm;
+  layer.framebufferOnly = NO;
+  layer.opaque = NO;
+
+  [self addSubview:_metalView];
+}
+
+- (void)resetLayers
+{
+  [CATransaction begin];
+  [CATransaction setDisableActions:YES];
+  [_contentLayer removeFromSuperlayer];
+  [_metalView removeFromSuperview];
+  [self addLayers];
+  [CATransaction commit];
 }
 
 @end
@@ -144,7 +161,7 @@ static NSTimer *gRecheckTimer;
 - (void)dealloc
 {
   [self unobserveScrollViews];
-  [self detachSurface];
+  if (_surfaceId != 0) thorvg::rn::SurfaceRegistry::shared().detachSurface(_surfaceId);
 }
 
 - (void)updateLayoutMetrics:(LayoutMetrics const &)layoutMetrics
@@ -250,6 +267,7 @@ static NSTimer *gRecheckTimer;
 {
   if (_surfaceId == 0) return;
   thorvg::rn::SurfaceRegistry::shared().detachSurface(_surfaceId);
+  [_hostView resetLayers];
 }
 
 @end
