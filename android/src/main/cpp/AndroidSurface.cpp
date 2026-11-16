@@ -134,14 +134,6 @@ void AndroidSurface::geometry(uint32_t width, uint32_t height) {
   height_ = height;
 }
 
-void AndroidSurface::presented(const Frame& frame) {
-  uint32_t width = 0;
-  uint32_t height = 0;
-  std::memcpy(&width, &frame.layoutWidth, sizeof(width));
-  std::memcpy(&height, &frame.layoutHeight, sizeof(height));
-  layout_.store((static_cast<uint64_t>(width) << 32) | height);
-}
-
 void AndroidSurface::present(const uint32_t* pixels, const Frame& frame) {
   auto width = frame.width;
   auto height = frame.height;
@@ -161,7 +153,6 @@ void AndroidSurface::present(const uint32_t* pixels, const Frame& frame) {
                 columns * 4);
   }
   ANativeWindow_unlockAndPost(window_);
-  presented(frame);
 }
 
 Tvg_Result AndroidSurface::target(Tvg_Canvas canvas, uint32_t width, uint32_t height) {
@@ -178,10 +169,9 @@ Tvg_Result AndroidSurface::target(Tvg_Canvas canvas, uint32_t width, uint32_t he
                                  TVG_COLORSPACE_ABGR8888S);
 }
 
-void AndroidSurface::swap(const Frame& frame) {
+void AndroidSurface::swap(const Frame&) {
   if (egl_ == EGL_NO_SURFACE || !live()) return;
   GlGpu::shared()->swap(egl_);
-  presented(frame);
 }
 
 }

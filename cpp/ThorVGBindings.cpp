@@ -705,12 +705,11 @@ void installCanvas(Builder& b) {
     return jsi::String::createFromAscii(rt, rendererName(host ? host->renderer() : Renderer::Sw));
   });
 
-  b.fn("canvas_resize", 5, [](jsi::Runtime& rt, const jsi::Value&, Args args, size_t count) {
+  b.fn("canvas_resize", 3, [](jsi::Runtime& rt, const jsi::Value&, Args args, size_t count) {
     auto host = canvasHost(rt, at(args, count, 0));
     if (!host) return jsi::Value(static_cast<int>(TVG_RESULT_INSUFFICIENT_CONDITION));
-    return jsi::Value(static_cast<int>(host->resize(
-        Arg<uint32_t>::get(rt, at(args, count, 1)), Arg<uint32_t>::get(rt, at(args, count, 2)),
-        static_cast<float>(number(at(args, count, 3))), static_cast<float>(number(at(args, count, 4))))));
+    return jsi::Value(static_cast<int>(
+        host->resize(Arg<uint32_t>::get(rt, at(args, count, 1)), Arg<uint32_t>::get(rt, at(args, count, 2)))));
   });
 
   b.fn("canvas_render", 1, [](jsi::Runtime& rt, const jsi::Value&, Args args, size_t count) {

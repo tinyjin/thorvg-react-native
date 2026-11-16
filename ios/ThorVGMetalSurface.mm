@@ -136,18 +136,17 @@ class LayerSurface final : public Surface {
       }
       IOSurfaceUnlock(surface, 0, nullptr);
 
-      show(layer_, (__bridge id)surface, frame);
+      show(layer_, (__bridge id)surface);
       current_ = surface;
     }
   }
 
  private:
-  static void show(CALayer *layer, id contents, const Frame &frame)
+  static void show(CALayer *layer, id contents)
   {
     [CATransaction begin];
     [CATransaction setDisableActions:YES];
     layer.contents = contents;
-    layer.frame = CGRectMake(0, 0, frame.layoutWidth, frame.layoutHeight);
     [CATransaction commit];
   }
 

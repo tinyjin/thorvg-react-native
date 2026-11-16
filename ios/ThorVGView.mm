@@ -48,6 +48,7 @@ using namespace facebook::react;
   static id<MTLDevice> device = MTLCreateSystemDefaultDevice();
 
   _contentLayer = [CALayer layer];
+  _contentLayer.frame = self.bounds;
   [self.layer addSublayer:_contentLayer];
 
   _metalView = [[ThorVGMetalView alloc] initWithFrame:self.bounds];
@@ -62,6 +63,15 @@ using namespace facebook::react;
   layer.opaque = NO;
 
   [self addSubview:_metalView];
+}
+
+- (void)layoutSubviews
+{
+  [super layoutSubviews];
+  [CATransaction begin];
+  [CATransaction setDisableActions:YES];
+  _contentLayer.frame = self.bounds;
+  [CATransaction commit];
 }
 
 - (void)resetLayers

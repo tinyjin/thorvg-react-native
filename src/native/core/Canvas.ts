@@ -35,8 +35,8 @@ export class Canvas {
   private _renderer: Renderer = 'sw';
   private _mainScene: Scene | null = null;
   private _enableDevicePixelRatio: boolean = true;
-  private _logicalWidth: number = 1;
-  private _logicalHeight: number = 1;
+  private _logicalWidth: number = 0;
+  private _logicalHeight: number = 0;
   private _currentDPR: number = 1;
   private _unsubscribe: (() => void) | null = null;
   private _target: CanvasTarget | null = null;
@@ -55,8 +55,8 @@ export class Canvas {
       engineOption = EngineOption.Default,
     } = options;
 
-    this._logicalWidth = width ?? Math.max(1, surface.width);
-    this._logicalHeight = height ?? Math.max(1, surface.height);
+    this._logicalWidth = width ?? surface.width;
+    this._logicalHeight = height ?? surface.height;
     this._enableDevicePixelRatio = enableDevicePixelRatio;
 
     const jsi = getJSI();
@@ -228,14 +228,8 @@ export class Canvas {
   private _applySize(): void {
     if (!this._handle) return;
     const dpr = this._enableDevicePixelRatio ? this._currentDPR : 1;
-    const width = Math.max(1, Math.floor(this._logicalWidth * dpr));
-    const height = Math.max(1, Math.floor(this._logicalHeight * dpr));
-    getJSI().canvas_resize(
-      this._handle,
-      width,
-      height,
-      this._logicalWidth,
-      this._logicalHeight
-    );
+    const width = Math.floor(this._logicalWidth * dpr);
+    const height = Math.floor(this._logicalHeight * dpr);
+    getJSI().canvas_resize(this._handle, width, height);
   }
 }

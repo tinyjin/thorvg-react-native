@@ -25,8 +25,6 @@ Renderer rendererFromName(const std::string& name);
 struct Frame {
   uint32_t width = 0;
   uint32_t height = 0;
-  float layoutWidth = 0;
-  float layoutHeight = 0;
 };
 
 class Surface {
@@ -97,7 +95,7 @@ class CanvasHost : public std::enable_shared_from_this<CanvasHost> {
   bool visible() const { return visible_; }
   void setVisible(bool visible);
 
-  Tvg_Result resize(uint32_t width, uint32_t height, float layoutWidth, float layoutHeight);
+  Tvg_Result resize(uint32_t width, uint32_t height);
   Tvg_Result render();
   Tvg_Result add(Tvg_Paint paint);
   Tvg_Result remove(Tvg_Paint paint);
@@ -115,7 +113,8 @@ class CanvasHost : public std::enable_shared_from_this<CanvasHost> {
   void requestFrame();
   void drawFrame();
   Tvg_Result draw();
-  Frame frame() const { return {width_, height_, layoutWidth_, layoutHeight_}; }
+  Frame frame() const { return {width_, height_}; }
+  bool sized() const { return width_ > 0 && height_ > 0; }
 
   Tvg_Canvas canvas_ = nullptr;
   Gpu* gpu_ = nullptr;
@@ -124,8 +123,6 @@ class CanvasHost : public std::enable_shared_from_this<CanvasHost> {
   std::vector<uint32_t> buffer_;
   uint32_t width_ = 0;
   uint32_t height_ = 0;
-  float layoutWidth_ = 0;
-  float layoutHeight_ = 0;
   std::optional<std::array<int32_t, 4>> viewport_;
   std::atomic<bool> drawn_{false};
   // Owned by the render thread. The UI thread hands over changes through pendingSurface_.

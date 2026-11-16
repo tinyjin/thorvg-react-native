@@ -192,32 +192,34 @@ CanvasHost::~CanvasHost() {
   }
 }
 
-Tvg_Result CanvasHost::resize(uint32_t width, uint32_t height, float layoutWidth, float layoutHeight) {
+Tvg_Result CanvasHost::resize(uint32_t width, uint32_t height) {
   if (!canvas_) return TVG_RESULT_INSUFFICIENT_CONDITION;
-  width = std::max(width, 1u);
-  height = std::max(height, 1u);
-  layoutWidth_ = layoutWidth > 0 ? layoutWidth : static_cast<float>(width);
-  layoutHeight_ = layoutHeight > 0 ? layoutHeight : static_cast<float>(height);
+  if (width == 0 || height == 0) width = height = 0;
   if (width == width_ && height == height_) return TVG_RESULT_SUCCESS;
 
   width_ = width;
   height_ = height;
   if (gpu_) {
     targeted_ = false;
-    return TVG_RESULT_SUCCESS;
+  } else if (sized()) {
+    buffer_.assign(static_cast<size_t>(width) * height, 0);
+    auto result = tvg_swcanvas_set_target(canvas_, buffer_.data(), width, width, height, kColorspace);
+    if (result != TVG_RESULT_SUCCESS) {
+      buffer_.clear();
+      return result;
+    }
+    applyViewport();
+  } else {
+    buffer_.clear();
   }
-
-  buffer_.assign(static_cast<size_t>(width) * height, 0);
-  auto result = tvg_swcanvas_set_target(canvas_, buffer_.data(), width, width, height, kColorspace);
-  if (result == TVG_RESULT_SUCCESS) applyViewport();
-  return result;
+  if (sized() && drawn_) requestFrame();
+  return TVG_RESULT_SUCCESS;
 }
 
 Tvg_Result CanvasHost::render() {
   if (!canvas_) return TVG_RESULT_INSUFFICIENT_CONDITION;
-  if (!gpu_ && buffer_.empty()) return TVG_RESULT_INSUFFICIENT_CONDITION;
   drawn_ = true;
-  requestFrame();
+  if (sized()) requestFrame();
   return TVG_RESULT_SUCCESS;
 }
 
@@ -313,11 +315,8 @@ void CanvasHost::drawFrame() {
 }
 
 Tvg_Result CanvasHost::draw() {
-  if (gpu_) {
-    if (!bindTarget()) return TVG_RESULT_SUCCESS;
-  } else if (buffer_.empty()) {
-    return TVG_RESULT_INSUFFICIENT_CONDITION;
-  }
+  if (!sized()) return TVG_RESULT_SUCCESS;
+  if (gpu_ && !bindTarget()) return TVG_RESULT_SUCCESS;
   tvg_canvas_update(canvas_);
   auto result = tvg_canvas_draw(canvas_, true);
   tvg_canvas_sync(canvas_);
@@ -332,7 +331,7 @@ Tvg_Result CanvasHost::draw() {
 bool CanvasHost::bindTarget() {
   if (!gpu_) return true;
   gpu_->bind(surface_.get());
-  if (!surface_ || width_ == 0 || height_ == 0) return false;
+  if (!surface_) return false;
   if (!targeted_) {
     targeted_ = surface_->target(canvas_, width_, height_) == TVG_RESULT_SUCCESS;
     if (!targeted_) return false;
