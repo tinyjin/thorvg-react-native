@@ -365,10 +365,16 @@ declare global {
     ((id: number, ...args: unknown[]) => unknown) | undefined;
 }
 
+let cached: ThorVGJSI | undefined;
+
 export function getJSI(): ThorVGJSI {
+  if (cached) {
+    return cached;
+  }
   const jsi = globalThis.__thorvg;
   if (!jsi) {
     throw new Error('ThorVG native module not initialized. Call init() first.');
   }
+  cached = jsi;
   return jsi;
 }

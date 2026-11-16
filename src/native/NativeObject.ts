@@ -10,10 +10,11 @@ export abstract class NativeObject {
   }
 
   public get handle(): Handle {
-    if (this._disposed || !this._handle) {
+    const handle = this._handle;
+    if (!handle) {
       handleError('Object has been disposed', 'handle getter');
     }
-    return this._handle as Handle;
+    return handle as Handle;
   }
 
   public get ptr(): number {
