@@ -147,6 +147,9 @@ void AndroidSurface::present(const uint32_t* pixels, const Frame& frame) {
   auto height = frame.height;
   geometry(width, height);
 
+  // The view releases the window right after detaching, so a retired surface starts no new frame.
+  if (!live()) return;
+
   ANativeWindow_Buffer buffer;
   if (ANativeWindow_lock(window_, &buffer, nullptr) != 0) return;
 
@@ -176,7 +179,7 @@ Tvg_Result AndroidSurface::target(Tvg_Canvas canvas, uint32_t width, uint32_t he
 }
 
 void AndroidSurface::swap(const Frame& frame) {
-  if (egl_ == EGL_NO_SURFACE) return;
+  if (egl_ == EGL_NO_SURFACE || !live()) return;
   GlGpu::shared()->swap(egl_);
   presented(frame);
 }

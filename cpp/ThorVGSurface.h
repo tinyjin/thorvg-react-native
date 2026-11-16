@@ -35,6 +35,15 @@ class Surface {
   virtual void present(const uint32_t* pixels, const Frame& frame) = 0;
   virtual Tvg_Result target(Tvg_Canvas, uint32_t, uint32_t) { return TVG_RESULT_NOT_SUPPORTED; }
   virtual void swap(const Frame&) {}
+
+  // The view is letting go of this surface: no new frame starts on it once this returns. A frame
+  // already in flight may still finish, which is safe because the surface keeps its native target
+  // referenced.
+  void retire() { live_ = false; }
+  bool live() const { return live_; }
+
+ private:
+  std::atomic<bool> live_{true};
 };
 
 class Gpu {
@@ -72,6 +81,8 @@ EngineMutex& engineMutex();
 
 struct PresentTarget;
 
+// Callers hold engineMutex(), except for attach, detach and setVisible, which the UI thread
+// calls and which never wait for a draw.
 class CanvasHost : public std::enable_shared_from_this<CanvasHost> {
  public:
   CanvasHost(int surfaceId, Tvg_Engine_Option option, Renderer renderer);
@@ -96,28 +107,32 @@ class CanvasHost : public std::enable_shared_from_this<CanvasHost> {
   void detach();
 
  private:
-  void submitLocked();
-  bool bindLocked();
-  void applyViewportLocked();
-  void requestFrameLocked();
+  void setSurface(std::shared_ptr<Surface> surface);
+  void applySurface();
+  void submit();
+  bool bindTarget();
+  void applyViewport();
+  void requestFrame();
   void drawFrame();
-  Tvg_Result drawLocked();
-  Frame frameLocked() const { return {width_, height_, layoutWidth_, layoutHeight_}; }
+  Tvg_Result draw();
+  Frame frame() const { return {width_, height_, layoutWidth_, layoutHeight_}; }
 
-  std::mutex mutex_;
   Tvg_Canvas canvas_ = nullptr;
   Gpu* gpu_ = nullptr;
   bool targeted_ = false;
-  bool framePending_ = false;
+  std::atomic<bool> framePending_{false};
   std::vector<uint32_t> buffer_;
   uint32_t width_ = 0;
   uint32_t height_ = 0;
   float layoutWidth_ = 0;
   float layoutHeight_ = 0;
   std::optional<std::array<int32_t, 4>> viewport_;
-  bool drawn_ = false;
+  std::atomic<bool> drawn_{false};
+  // Owned by the render thread. The UI thread hands over changes through pendingSurface_.
   std::shared_ptr<Surface> surface_;
   std::shared_ptr<Surface> bound_;
+  std::mutex pendingMutex_;
+  std::optional<std::shared_ptr<Surface>> pendingSurface_;
   std::shared_ptr<PresentTarget> present_;
   int surfaceId_;
   std::atomic<bool> visible_{true};

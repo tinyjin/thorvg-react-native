@@ -174,7 +174,8 @@ CanvasHost::CanvasHost(int surfaceId, Tvg_Engine_Option option, Renderer rendere
 }
 
 CanvasHost::~CanvasHost() {
-  std::lock_guard<std::mutex> lock(mutex_);
+  // Pick up a detach the render thread hasn't applied yet, so release doesn't bind a retired surface.
+  applySurface();
   if (canvas_) {
     if (gpu_) {
       gpu_->release(canvas_, surface_);
@@ -192,7 +193,6 @@ CanvasHost::~CanvasHost() {
 }
 
 Tvg_Result CanvasHost::resize(uint32_t width, uint32_t height, float layoutWidth, float layoutHeight) {
-  std::lock_guard<std::mutex> lock(mutex_);
   if (!canvas_) return TVG_RESULT_INSUFFICIENT_CONDITION;
   width = std::max(width, 1u);
   height = std::max(height, 1u);
@@ -209,67 +209,73 @@ Tvg_Result CanvasHost::resize(uint32_t width, uint32_t height, float layoutWidth
 
   buffer_.assign(static_cast<size_t>(width) * height, 0);
   auto result = tvg_swcanvas_set_target(canvas_, buffer_.data(), width, width, height, kColorspace);
-  if (result == TVG_RESULT_SUCCESS) applyViewportLocked();
+  if (result == TVG_RESULT_SUCCESS) applyViewport();
   return result;
 }
 
 Tvg_Result CanvasHost::render() {
-  std::lock_guard<std::mutex> lock(mutex_);
   if (!canvas_) return TVG_RESULT_INSUFFICIENT_CONDITION;
   if (!gpu_ && buffer_.empty()) return TVG_RESULT_INSUFFICIENT_CONDITION;
   drawn_ = true;
-  requestFrameLocked();
+  requestFrame();
   return TVG_RESULT_SUCCESS;
 }
 
 Tvg_Result CanvasHost::add(Tvg_Paint paint) {
-  std::lock_guard<std::mutex> lock(mutex_);
   if (!canvas_) return TVG_RESULT_INSUFFICIENT_CONDITION;
   return tvg_canvas_add(canvas_, paint);
 }
 
 Tvg_Result CanvasHost::remove(Tvg_Paint paint) {
-  std::lock_guard<std::mutex> lock(mutex_);
   if (!canvas_) return TVG_RESULT_INSUFFICIENT_CONDITION;
   return tvg_canvas_remove(canvas_, paint);
 }
 
 Tvg_Result CanvasHost::viewport(int32_t x, int32_t y, int32_t w, int32_t h) {
-  std::lock_guard<std::mutex> lock(mutex_);
   if (!canvas_) return TVG_RESULT_INSUFFICIENT_CONDITION;
   viewport_ = {x, y, w, h};
   return tvg_canvas_set_viewport(canvas_, x, y, w, h);
 }
 
-void CanvasHost::applyViewportLocked() {
+void CanvasHost::applyViewport() {
   if (viewport_) tvg_canvas_set_viewport(canvas_, (*viewport_)[0], (*viewport_)[1], (*viewport_)[2], (*viewport_)[3]);
 }
 
-void CanvasHost::attach(std::shared_ptr<Surface> surface) {
-  std::lock_guard<std::mutex> lock(mutex_);
-  surface_ = std::move(surface);
+void CanvasHost::attach(std::shared_ptr<Surface> surface) { setSurface(std::move(surface)); }
+
+void CanvasHost::detach() { setSurface(nullptr); }
+
+// Called on the UI thread: hand the surface over without waiting for a draw in flight.
+void CanvasHost::setSurface(std::shared_ptr<Surface> surface) {
   if (!gpu_) {
+    auto attached = surface != nullptr;
     {
       std::lock_guard<std::mutex> target(present_->mutex);
-      present_->surface = surface_;
-      present_->repaint = true;
+      present_->surface = std::move(surface);
+      present_->repaint = attached;
     }
-    Presenter::shared().schedule(present_);
+    if (attached) Presenter::shared().schedule(present_);
     return;
   }
 
-  targeted_ = false;
-  if (drawn_) requestFrameLocked();
+  auto attached = surface != nullptr;
+  {
+    std::lock_guard<std::mutex> lock(pendingMutex_);
+    pendingSurface_ = std::move(surface);
+  }
+  // A detach still needs a pass so the render thread drops the old surface.
+  if (!attached || drawn_) requestFrame();
 }
 
-void CanvasHost::detach() {
-  std::lock_guard<std::mutex> lock(mutex_);
-  surface_.reset();
-  targeted_ = false;
-  if (present_) {
-    std::lock_guard<std::mutex> target(present_->mutex);
-    present_->surface.reset();
+void CanvasHost::applySurface() {
+  std::optional<std::shared_ptr<Surface>> next;
+  {
+    std::lock_guard<std::mutex> lock(pendingMutex_);
+    next.swap(pendingSurface_);
   }
+  if (!next) return;
+  surface_ = std::move(*next);
+  targeted_ = false;
 }
 
 void CanvasHost::setVisible(bool visible) {
@@ -277,19 +283,18 @@ void CanvasHost::setVisible(bool visible) {
   if (visible) wakePlayers();
 }
 
-void CanvasHost::submitLocked() {
+void CanvasHost::submit() {
   {
     std::lock_guard<std::mutex> target(present_->mutex);
     present_->back.assign(buffer_.begin(), buffer_.end());
-    present_->frame = frameLocked();
+    present_->frame = frame();
     present_->dirty = true;
   }
   Presenter::shared().schedule(present_);
 }
 
-void CanvasHost::requestFrameLocked() {
-  if (framePending_) return;
-  framePending_ = true;
+void CanvasHost::requestFrame() {
+  if (framePending_.exchange(true)) return;
   auto task = [weak = weak_from_this()] {
     std::lock_guard<EngineMutex> engine(engineMutex());
     if (auto host = weak.lock()) host->drawFrame();
@@ -302,14 +307,14 @@ void CanvasHost::requestFrameLocked() {
 }
 
 void CanvasHost::drawFrame() {
-  std::lock_guard<std::mutex> lock(mutex_);
   framePending_ = false;
-  if (canvas_) drawLocked();
+  applySurface();
+  if (canvas_ && drawn_) draw();
 }
 
-Tvg_Result CanvasHost::drawLocked() {
+Tvg_Result CanvasHost::draw() {
   if (gpu_) {
-    if (!bindLocked()) return TVG_RESULT_SUCCESS;
+    if (!bindTarget()) return TVG_RESULT_SUCCESS;
   } else if (buffer_.empty()) {
     return TVG_RESULT_INSUFFICIENT_CONDITION;
   }
@@ -317,14 +322,14 @@ Tvg_Result CanvasHost::drawLocked() {
   auto result = tvg_canvas_draw(canvas_, true);
   tvg_canvas_sync(canvas_);
   if (gpu_) {
-    surface_->swap(frameLocked());
+    surface_->swap(frame());
   } else {
-    submitLocked();
+    submit();
   }
   return result;
 }
 
-bool CanvasHost::bindLocked() {
+bool CanvasHost::bindTarget() {
   if (!gpu_) return true;
   gpu_->bind(surface_.get());
   if (!surface_ || width_ == 0 || height_ == 0) return false;
@@ -332,7 +337,7 @@ bool CanvasHost::bindLocked() {
     targeted_ = surface_->target(canvas_, width_, height_) == TVG_RESULT_SUCCESS;
     if (!targeted_) return false;
     bound_ = surface_;
-    applyViewportLocked();
+    applyViewport();
   }
   return targeted_;
 }
@@ -345,6 +350,7 @@ SurfaceRegistry& SurfaceRegistry::shared() {
 void SurfaceRegistry::attachSurface(int surfaceId, std::shared_ptr<Surface> surface) {
   std::lock_guard<std::mutex> lock(mutex_);
   auto& entry = entries_[surfaceId];
+  if (entry.surface && entry.surface != surface) entry.surface->retire();
   entry.surface = std::move(surface);
   if (auto canvas = entry.canvas.lock()) canvas->attach(entry.surface);
 }
@@ -353,6 +359,7 @@ void SurfaceRegistry::detachSurface(int surfaceId) {
   std::lock_guard<std::mutex> lock(mutex_);
   auto it = entries_.find(surfaceId);
   if (it == entries_.end()) return;
+  if (it->second.surface) it->second.surface->retire();
   if (auto canvas = it->second.canvas.lock()) canvas->detach();
   it->second.surface.reset();
   prune(surfaceId);
