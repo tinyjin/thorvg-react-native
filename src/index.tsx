@@ -51,6 +51,7 @@ export type {
   FontProvider,
   FontProviderResult,
   FontType,
+  GlyphMetrics,
   LoadDataOptions,
   LoadFontOptions,
   LottieMarker,
@@ -64,6 +65,6 @@ export type {
   Shape,
   StrokeOptions,
   TextLayout,
+  TextMetrics,
   TextOutline,
 } from '@thorvg/webcanvas';
-export type { GlyphMetrics, TextMetrics } from './native/core/Text';

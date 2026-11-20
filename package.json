@@ -74,7 +74,7 @@
     "registry": "https://registry.npmjs.org/"
   },
   "dependencies": {
-    "@thorvg/webcanvas": "~1.1.3",
+    "@thorvg/webcanvas": "~1.1.4",
     "react-reconciler": "0.31.0"
   },
   "devDependencies": {

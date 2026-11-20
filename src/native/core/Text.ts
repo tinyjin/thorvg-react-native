@@ -1,23 +1,9 @@
+import type { GlyphMetrics, TextMetrics } from '@thorvg/webcanvas';
 import { Paint } from './Paint';
 import { Fill } from './Fill';
 import { checkResult } from '../errors';
 import { getJSI, type Handle } from '../jsi';
 import type { TextWrapMode } from '../generated/constants';
-
-// TODO: import from @thorvg/webcanvas once 1.1.4 is published
-export interface TextMetrics {
-  ascent: number;
-  descent: number;
-  linegap: number;
-  advance: number;
-}
-
-export interface GlyphMetrics {
-  advance: number;
-  bearing: number;
-  min: { x: number; y: number };
-  max: { x: number; y: number };
-}
 
 export class Text extends Paint {
   constructor(handle?: Handle) {
