@@ -4,6 +4,21 @@ import { checkResult } from '../errors';
 import { getJSI, type Handle } from '../jsi';
 import type { TextWrapMode } from '../generated/constants';
 
+// TODO: import from @thorvg/webcanvas once 1.1.4 is published
+export interface TextMetrics {
+  ascent: number;
+  descent: number;
+  linegap: number;
+  advance: number;
+}
+
+export interface GlyphMetrics {
+  advance: number;
+  bearing: number;
+  min: { x: number; y: number };
+  max: { x: number; y: number };
+}
+
 export class Text extends Paint {
   constructor(handle?: Handle) {
     super(handle ?? getJSI().tvg_text_new());
@@ -71,6 +86,35 @@ export class Text extends Paint {
 
   public lines(): number {
     return getJSI().tvg_text_line_count(this.handle);
+  }
+
+  public metrics(): TextMetrics;
+  public metrics(char: string): GlyphMetrics;
+  public metrics(char?: string): TextMetrics | GlyphMetrics {
+    const jsi = getJSI();
+
+    if (char === undefined) {
+      const { result, metrics: m } = jsi.tvg_text_get_text_metrics(this.handle);
+      checkResult(result, 'metrics');
+      return {
+        ascent: m[0]!,
+        descent: m[1]!,
+        linegap: m[2]!,
+        advance: m[3]!,
+      };
+    }
+
+    const { result, metrics: m } = jsi.tvg_text_get_glyph_metrics(
+      this.handle,
+      char
+    );
+    checkResult(result, 'metrics');
+    return {
+      advance: m[0]!,
+      bearing: m[1]!,
+      min: { x: m[2]!, y: m[3]! },
+      max: { x: m[4]!, y: m[5]! },
+    };
   }
 
   public spacing(letter: number, line: number): this {

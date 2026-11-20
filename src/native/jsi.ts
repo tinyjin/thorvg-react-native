@@ -284,6 +284,17 @@ export interface ThorVGJSI {
   tvg_text_layout(text: Handle, w: number, h: number): Result;
   tvg_text_wrap_mode(text: Handle, mode: number): Result;
   tvg_text_line_count(text: Handle): number;
+  tvg_text_get_text_metrics(text: Handle): {
+    result: Result;
+    metrics: number[];
+  };
+  tvg_text_get_glyph_metrics(
+    text: Handle,
+    ch: string
+  ): {
+    result: Result;
+    metrics: number[];
+  };
   tvg_text_spacing(text: Handle, letter: number, line: number): Result;
   tvg_text_set_italic(text: Handle, shear: number): Result;
   tvg_text_set_outline(

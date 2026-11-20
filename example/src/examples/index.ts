@@ -37,6 +37,7 @@ import SceneEffects from './scene-effects';
 import Viewport from './viewport';
 import TextLayout from './text-layout';
 import TextLineWrap from './text-line-wrap';
+import TextMetrics from './text-metrics';
 import TextOtf from './text-otf';
 import TextTtf from './text-ttf';
 import Animation from './animation';
@@ -378,6 +379,14 @@ export const examples: Example[] = [
     category: 'text',
     thumbnail: '/assets/text-line-wrap-thumbnail.png',
     Component: TextLineWrap,
+  },
+  {
+    id: 'text-metrics',
+    title: 'Text Metrics',
+    description: 'Type text with a cursor positioned by glyph metrics',
+    category: 'text',
+    thumbnail: '/assets/text-metrics-thumbnail.png',
+    Component: TextMetrics,
   },
   {
     id: 'text-otf',

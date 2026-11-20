@@ -66,3 +66,4 @@ export type {
   TextLayout,
   TextOutline,
 } from '@thorvg/webcanvas';
+export type { GlyphMetrics, TextMetrics } from './native/core/Text';

@@ -555,6 +555,27 @@ void installText(Builder& b) {
         static_cast<int>(tvg_text_set_text(handlePtr<Tvg_Paint>(rt, at(args, count, 0)), content.c_str())));
   });
 
+  b.fn("tvg_text_get_text_metrics", 1, [](jsi::Runtime& rt, const jsi::Value&, Args args, size_t count) -> jsi::Value {
+    Tvg_Text_Metrics metrics{};
+    auto result = tvg_text_get_text_metrics(handlePtr<Tvg_Paint>(rt, at(args, count, 0)), &metrics);
+    const float values[] = {metrics.ascent, metrics.descent, metrics.linegap, metrics.advance};
+    jsi::Object out(rt);
+    out.setProperty(rt, "result", static_cast<int>(result));
+    out.setProperty(rt, "metrics", floatArray(rt, values, 4));
+    return out;
+  });
+
+  b.fn("tvg_text_get_glyph_metrics", 2, [](jsi::Runtime& rt, const jsi::Value&, Args args, size_t count) -> jsi::Value {
+    auto ch = text(rt, at(args, count, 1));
+    Tvg_Glyph_Metrics metrics{};
+    auto result = tvg_text_get_glyph_metrics(handlePtr<Tvg_Paint>(rt, at(args, count, 0)), ch.c_str(), &metrics, nullptr);
+    const float values[] = {metrics.advance, metrics.bearing, metrics.min.x, metrics.min.y, metrics.max.x, metrics.max.y};
+    jsi::Object out(rt);
+    out.setProperty(rt, "result", static_cast<int>(result));
+    out.setProperty(rt, "metrics", floatArray(rt, values, 6));
+    return out;
+  });
+
   b.fn("tvg_font_load_data", 3, [](jsi::Runtime& rt, const jsi::Value&, Args args, size_t count) {
     auto name = text(rt, at(args, count, 0));
     if (!at(args, count, 1).isObject()) {
