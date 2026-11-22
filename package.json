@@ -70,7 +70,8 @@
   },
   "homepage": "https://tinyjin.github.io/thorvg-react-native",
   "publishConfig": {
-    "registry": "https://registry.npmjs.org/"
+    "registry": "https://registry.npmjs.org/",
+    "tag": "gpu"
   },
   "dependencies": {
     "@thorvg/webcanvas": "~1.1.4",
