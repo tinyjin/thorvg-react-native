@@ -34,7 +34,11 @@ export async function createNamespace(
   onTerm: () => void
 ): Promise<ThorVG> {
   const module = await loadWebCanvas(options);
-  const namespace = await module.init(options);
+  const { renderer, ...rest } = options;
+  const namespace = await module.init({
+    ...rest,
+    renderer: renderer === 'mtl' || renderer === 'vk' ? undefined : renderer,
+  });
   return {
     ...namespace,
     Canvas: createCanvas(module.Canvas),

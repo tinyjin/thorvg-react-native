@@ -1,0 +1,2 @@
+metal https://github.com/tinyjin/thorvg.git jinny/metal-engine 67b9b7a9019594e73f732e6a05dba533d0dfa94f
+vulkan https://github.com/tinyjin/thorvg.git jinny/vulkan-engine 13fd596d8c0609b225322904aa057a6c0c369414

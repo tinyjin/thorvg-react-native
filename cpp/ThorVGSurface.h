@@ -17,7 +17,7 @@
 
 namespace thorvg::rn {
 
-enum class Renderer { Sw, Gl, Wg };
+enum class Renderer { Sw, Gl, Wg, Mtl, Vk };
 
 const char* rendererName(Renderer renderer);
 Renderer rendererFromName(const std::string& name);
@@ -51,11 +51,14 @@ class Gpu {
   virtual Tvg_Canvas create(Tvg_Engine_Option option) = 0;
   virtual void bind(Surface* surface) = 0;
   virtual void unbind() {}
+  virtual Tvg_Result target(Surface* surface, Tvg_Canvas canvas, uint32_t width, uint32_t height) {
+    return surface->target(canvas, width, height);
+  }
   virtual void schedule(std::function<void()> task);
   virtual void release(Tvg_Canvas canvas, std::shared_ptr<Surface> surface);
 };
 
-Gpu* platformGpu();
+Gpu* platformGpu(Renderer renderer);
 void flushPresented();
 
 void setScheduler(std::function<void(std::function<void()>)> scheduler);

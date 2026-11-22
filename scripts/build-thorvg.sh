@@ -3,6 +3,8 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 THORVG="$ROOT/thorvg"
+GPU_ENGINES="$ROOT/native/thorvg-gpu.txt"
+RERERE="$ROOT/native/thorvg-rerere"
 CROSS="$ROOT/native"
 BUILD="$ROOT/build/thorvg"
 LIBS="$ROOT/libs"
@@ -35,6 +37,50 @@ if [ ! -f "$THORVG/meson.build" ]; then
 fi
 
 VERSION="$(git -C "$THORVG" describe --tags --always)"
+SOURCE="$BUILD/source"
+
+prepare_source() {
+  src() { git -C "$SOURCE" -c user.name=thorvg-react-native -c user.email=thorvg-react-native@localhost -c core.editor=true "$@"; }
+
+  [ -d "$SOURCE/.git" ] || { rm -rf "$SOURCE"; git init -q "$SOURCE"; }
+  src config rerere.enabled true
+  src config rerere.autoUpdate true
+  src config gc.rerereResolved 36500
+  src config gc.rerereUnresolved 36500
+  mkdir -p "$SOURCE/.git/rr-cache" "$RERERE"
+  cp -R "$RERERE/." "$SOURCE/.git/rr-cache/"
+
+  local base upstream
+  base="$(git -C "$THORVG" rev-parse HEAD)"
+  upstream="$(git -C "$THORVG" remote get-url origin)"
+  src cherry-pick --abort 2> /dev/null || true
+  src fetch -q "$THORVG" HEAD
+  src fetch -q "$upstream" main
+  local main
+  main="$(src rev-parse FETCH_HEAD)"
+  src checkout -q -f --detach "$base"
+  src clean -qfdx
+
+  local name url branch sha commit
+  while read -r name url branch sha; do
+    [ -n "$name" ] || continue
+    src cat-file -e "$sha^{commit}" 2> /dev/null || src fetch -q "$url" "$sha"
+    echo "  applying $name ($branch@${sha:0:8})"
+    for commit in $(src rev-list --reverse --no-merges "$(src merge-base "$main" "$sha")..$sha"); do
+      src cherry-pick -X diff-algorithm=histogram "$commit" > /dev/null 2>&1 && continue
+      if [ -z "$(src diff --name-only --diff-filter=U)" ] && [ -z "$(src rerere remaining)" ]; then
+        src cherry-pick --continue > /dev/null
+        continue
+      fi
+      echo "$(src log -1 --format='%h %s' "$commit") left conflicts that no recorded resolution covers:" >&2
+      src diff --name-only --diff-filter=U | sed 's/^/  /' >&2
+      echo "Resolve them in $SOURCE, run git add and git cherry-pick --continue there, then run this script again." >&2
+      exit 1
+    done
+  done < "$GPU_ENGINES"
+
+  cp -R "$SOURCE/.git/rr-cache/." "$RERERE/"
+}
 
 build_slice() {
   local name="$1" constants="$2" simd="$3" engines="$4" extra="$5"
@@ -45,7 +91,7 @@ build_slice() {
   mkdir -p "$dir"
   printf '%s\n' "$constants" > "$dir/constants.ini"
 
-  meson setup "$dir/build" "$THORVG" \
+  meson setup "$dir/build" "$SOURCE" \
     --cross-file "$dir/constants.ini" \
     --cross-file "$CROSS/$name.txt" \
     "${MESON_OPTIONS[@]}" \
@@ -60,7 +106,7 @@ build_slice() {
 copy_headers() {
   local dest="$1"
   mkdir -p "$dest"
-  cp "$THORVG/src/bindings/capi/thorvg_capi.h" "$dest/"
+  cp "$SOURCE/src/bindings/capi/thorvg_capi.h" "$dest/"
 }
 
 build_android() {
@@ -76,12 +122,13 @@ build_android() {
 
   rm -rf "$LIBS/android"
   for abi in "${ANDROID_ABIS[@]}"; do
-    local simd=true
+    local simd=true engines=cpu,gl,vk
     case "$abi" in x86|x86_64) simd=false ;; esac
-    echo "  building $abi"
+    case "$abi" in armeabi-v7a|x86) engines=cpu,gl ;; esac
+    echo "  building $abi ($engines)"
     build_slice "android-$abi" "[constants]
 toolchain = '$toolchain'
-api = '$ANDROID_API'" "$simd" cpu,gl lottie_exp,opengl_es
+api = '$ANDROID_API'" "$simd" "$engines" lottie_exp,opengl_es
     mkdir -p "$LIBS/android/$abi"
     "$toolchain/llvm-strip" --strip-debug "$BUILD/android-$abi/libthorvg.a" -o "$LIBS/android/$abi/libthorvg.a"
   done
@@ -122,13 +169,13 @@ build_ios() {
       ios-sim-arm64) arch=aarch64-simulator ;;
       ios-sim-x86_64) arch=x86_64-simulator ;;
     esac
-    echo "  building $slice"
+    echo "  building $slice (cpu,wg,mtl)"
     fetch_wgpu "$slice" "$arch"
     build_slice "$slice" "[constants]
 toolchain = '$toolchain'
 ios_min = '$IOS_MIN'
 iphoneos_sdk = '$iphoneos'
-simulator_sdk = '$simulator'" "$simd" cpu,wg lottie_exp -Dpkg_config_path="$BUILD/wgpu/$slice"
+simulator_sdk = '$simulator'" "$simd" cpu,wg,mtl lottie_exp -Dpkg_config_path="$BUILD/wgpu/$slice"
     strip -S "$BUILD/$slice/libthorvg.a" 2>/dev/null
   done
 
@@ -179,12 +226,15 @@ simulator_sdk = '$simulator'" "$simd" cpu,wg lottie_exp -Dpkg_config_path="$BUIL
   echo "$VERSION" > "$LIBS/webgpu/VERSION"
 }
 
-echo "ThorVG $VERSION"
+case "$TARGET" in android|ios|all|source) ;; *) echo "Usage: $0 [android|ios|all|source]" >&2; exit 1 ;; esac
+echo "ThorVG $VERSION + $(cut -d' ' -f1 "$GPU_ENGINES" | paste -sd, -)"
+prepare_source
 case "$TARGET" in
   android) build_android ;;
   ios) build_ios ;;
   all) build_android; build_ios ;;
-  *) echo "Usage: $0 [android|ios|all]" >&2; exit 1 ;;
+  source) echo "Source: $SOURCE"; exit 0 ;;
+  *) echo "Usage: $0 [android|ios|all|source]" >&2; exit 1 ;;
 esac
 cp "$THORVG/LICENSE" "$LIBS/LICENSE"
 echo "Done: $LIBS"

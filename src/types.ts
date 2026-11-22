@@ -27,4 +27,9 @@ export type ThorVG = Omit<ThorVGNamespace, 'Canvas' | 'Video'> & {
   ) => Canvas;
 };
 
-export type InitOptions = WebCanvasInitOptions;
+export type Renderer =
+  NonNullable<WebCanvasInitOptions['renderer']> | 'mtl' | 'vk';
+
+export type InitOptions = Omit<WebCanvasInitOptions, 'renderer'> & {
+  renderer?: Renderer;
+};

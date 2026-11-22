@@ -6,6 +6,7 @@
 
 #import <CoreVideo/CVPixelBuffer.h>
 #import <IOSurface/IOSurfaceRef.h>
+#import <Metal/Metal.h>
 
 #include <array>
 #include <cstring>
@@ -84,6 +85,36 @@ class WgGpu final : public Gpu {
 };
 #endif
 
+class MtlGpu final : public Gpu {
+ public:
+  static MtlGpu *shared()
+  {
+    static MtlGpu *gpu = [] {
+      id<MTLDevice> device = MTLCreateSystemDefaultDevice();
+      id<MTLCommandQueue> queue = [device newCommandQueue];
+      return device && queue ? new MtlGpu(device, queue) : static_cast<MtlGpu *>(nullptr);
+    }();
+    return gpu;
+  }
+
+  Renderer renderer() const override { return Renderer::Mtl; }
+
+  Tvg_Canvas create(Tvg_Engine_Option option) override { return tvg_mtlcanvas_create(option); }
+
+  void bind(Surface *) override {}
+
+  Tvg_Result target(Surface *surface, Tvg_Canvas canvas, uint32_t width, uint32_t height) override;
+
+  id<MTLDevice> device() const { return device_; }
+  id<MTLCommandQueue> queue() const { return queue_; }
+
+ private:
+  MtlGpu(id<MTLDevice> device, id<MTLCommandQueue> queue) : device_(device), queue_(queue) {}
+
+  id<MTLDevice> device_;
+  id<MTLCommandQueue> queue_;
+};
+
 class LayerSurface final : public Surface {
  public:
   LayerSurface(CALayer *layer, CAMetalLayer *metalLayer) : layer_(layer), metalLayer_(metalLayer)
@@ -97,6 +128,20 @@ class LayerSurface final : public Surface {
     if (wgSurface_) wgpuSurfaceRelease(wgSurface_);
   }
 #endif
+
+  Tvg_Result targetMetal(MtlGpu *gpu, Tvg_Canvas canvas, uint32_t width, uint32_t height)
+  {
+    auto result = tvg_mtlcanvas_set_target(canvas, (__bridge void *)gpu->device(), (__bridge void *)gpu->queue(),
+                                           (__bridge void *)metalLayer_, width, height, TVG_COLORSPACE_ABGR8888, 0);
+    if (result == TVG_RESULT_SUCCESS && !metalShown_) {
+      metalShown_ = true;
+      CAMetalLayer *metalLayer = metalLayer_;
+      dispatch_async(dispatch_get_main_queue(), ^{
+        metalLayer.hidden = NO;
+      });
+    }
+    return result;
+  }
 
 #if THORVG_RN_WEBGPU
   Tvg_Result target(Tvg_Canvas canvas, uint32_t width, uint32_t height) override
@@ -190,10 +235,16 @@ class LayerSurface final : public Surface {
   IOSurfaceRef current_ = nullptr;
   uint32_t width_ = 0;
   uint32_t height_ = 0;
+  bool metalShown_ = false;
 #if THORVG_RN_WEBGPU
   WGPUSurface wgSurface_ = nullptr;
 #endif
 };
+
+Tvg_Result MtlGpu::target(Surface *surface, Tvg_Canvas canvas, uint32_t width, uint32_t height)
+{
+  return static_cast<LayerSurface *>(surface)->targetMetal(this, canvas, width, height);
+}
 
 }
 
@@ -202,13 +253,18 @@ void flushPresented()
   [CATransaction flush];
 }
 
-Gpu *platformGpu()
+Gpu *platformGpu(Renderer renderer)
 {
+  switch (renderer) {
+    case Renderer::Mtl:
+      return MtlGpu::shared();
 #if THORVG_RN_WEBGPU
-  return WgGpu::shared();
-#else
-  return nullptr;
+    case Renderer::Wg:
+      return WgGpu::shared();
 #endif
+    default:
+      return nullptr;
+  }
 }
 
 std::shared_ptr<Surface> makeLayerSurface(CALayer *layer, CAMetalLayer *metalLayer)

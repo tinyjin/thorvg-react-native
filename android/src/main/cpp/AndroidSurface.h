@@ -16,6 +16,7 @@ class AndroidSurface final : public Surface {
 
   void present(const uint32_t* pixels, const Frame& frame) override;
   Tvg_Result target(Tvg_Canvas canvas, uint32_t width, uint32_t height) override;
+  Tvg_Result targetVulkan(Tvg_Canvas canvas, uint32_t width, uint32_t height);
   void swap(const Frame&) override;
 
   EGLSurface egl() const { return egl_; }
@@ -25,6 +26,7 @@ class AndroidSurface final : public Surface {
 
   ANativeWindow* window_;
   EGLSurface egl_ = EGL_NO_SURFACE;
+  uint64_t vulkan_ = 0;
   uint32_t width_ = 0;
   uint32_t height_ = 0;
 };

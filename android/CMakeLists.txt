@@ -33,6 +33,11 @@ target_include_directories(
 target_compile_options(reactnativethorvg PRIVATE -O2 -Wall -fvisibility=hidden)
 target_link_options(reactnativethorvg PRIVATE "-Wl,-z,max-page-size=16384" "-Wl,--gc-sections")
 
+if(ANDROID_ABI STREQUAL "arm64-v8a" OR ANDROID_ABI STREQUAL "x86_64")
+  target_compile_definitions(reactnativethorvg PRIVATE THORVG_RN_VULKAN=1)
+  target_link_libraries(reactnativethorvg dl)
+endif()
+
 target_link_libraries(
   reactnativethorvg
   ReactAndroid::jsi

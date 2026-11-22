@@ -105,6 +105,10 @@ const char* rendererName(Renderer renderer) {
       return "gl";
     case Renderer::Wg:
       return "wg";
+    case Renderer::Mtl:
+      return "mtl";
+    case Renderer::Vk:
+      return "vk";
     default:
       return "sw";
   }
@@ -113,6 +117,8 @@ const char* rendererName(Renderer renderer) {
 Renderer rendererFromName(const std::string& name) {
   if (name == "gl") return Renderer::Gl;
   if (name == "wg") return Renderer::Wg;
+  if (name == "mtl") return Renderer::Mtl;
+  if (name == "vk") return Renderer::Vk;
   return Renderer::Sw;
 }
 
@@ -160,8 +166,8 @@ void Gpu::release(Tvg_Canvas canvas, std::shared_ptr<Surface> surface) {
 }
 
 CanvasHost::CanvasHost(int surfaceId, Tvg_Engine_Option option, Renderer renderer) : surfaceId_(surfaceId) {
-  auto* gpu = renderer == Renderer::Sw ? nullptr : platformGpu();
-  if (gpu && gpu->renderer() == renderer) {
+  auto* gpu = renderer == Renderer::Sw ? nullptr : platformGpu(renderer);
+  if (gpu) {
     gpu->bind(nullptr);
     canvas_ = gpu->create(option);
     gpu->unbind();
@@ -333,7 +339,7 @@ bool CanvasHost::bindTarget() {
   gpu_->bind(surface_.get());
   if (!surface_) return false;
   if (!targeted_) {
-    targeted_ = surface_->target(canvas_, width_, height_) == TVG_RESULT_SUCCESS;
+    targeted_ = gpu_->target(surface_.get(), canvas_, width_, height_) == TVG_RESULT_SUCCESS;
     if (!targeted_) return false;
     bound_ = surface_;
     applyViewport();

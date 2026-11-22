@@ -1,4 +1,5 @@
-import type { CanvasOptions, InitOptions } from '@thorvg/webcanvas';
+import type { CanvasOptions } from '@thorvg/webcanvas';
+import type { Renderer } from '../../types';
 import { PixelRatio, Platform } from 'react-native';
 import type { Paint } from './Paint';
 import { Scene } from './Scene';
@@ -14,8 +15,6 @@ import {
   type CanvasRef,
   type CanvasTarget,
 } from '../../canvas/CanvasTarget';
-
-type Renderer = NonNullable<InitOptions['renderer']>;
 
 const platformRenderer: Renderer = Platform.OS === 'android' ? 'gl' : 'sw';
 let preferredRenderer: Renderer = platformRenderer;

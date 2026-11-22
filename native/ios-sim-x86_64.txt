@@ -1,6 +1,7 @@
 [binaries]
 c = toolchain / 'clang'
 cpp = toolchain / 'clang++'
+objcpp = toolchain / 'clang++'
 ar = toolchain / 'ar'
 strip = toolchain / 'strip'
 pkg-config = 'pkg-config'
@@ -8,8 +9,10 @@ pkg-config = 'pkg-config'
 [built-in options]
 c_args = ['-target', 'x86_64-apple-ios' + ios_min + '-simulator', '-isysroot', simulator_sdk]
 cpp_args = ['-target', 'x86_64-apple-ios' + ios_min + '-simulator', '-isysroot', simulator_sdk]
+objcpp_args = ['-target', 'x86_64-apple-ios' + ios_min + '-simulator', '-isysroot', simulator_sdk]
 c_link_args = ['-target', 'x86_64-apple-ios' + ios_min + '-simulator', '-isysroot', simulator_sdk]
 cpp_link_args = ['-target', 'x86_64-apple-ios' + ios_min + '-simulator', '-isysroot', simulator_sdk]
+objcpp_link_args = ['-target', 'x86_64-apple-ios' + ios_min + '-simulator', '-isysroot', simulator_sdk]
 
 [host_machine]
 system = 'darwin'
