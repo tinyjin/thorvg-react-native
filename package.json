@@ -23,7 +23,6 @@
     "cpp",
     "*.podspec",
     "libs",
-    "!libs/webgpu",
     "scripts/setup-thorvg-web.mjs",
     "!ios/build",
     "!android/build",

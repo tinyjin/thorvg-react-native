@@ -17,16 +17,7 @@ const targets = [
     directory: 'thorvg-react-native-ios',
     description: 'Prebuilt ThorVG xcframework for thorvg-react-native',
     source: join(libs, 'ios'),
-    required: ['thorvg.xcframework/Info.plist', 'wgpu-stub.xcframework/Info.plist', 'VERSION'],
-  },
-  {
-    // Installing this package enables the 'wg' renderer by adding wgpu-native for each platform it ships.
-    name: 'thorvg-react-native-webgpu',
-    directory: 'thorvg-react-native-webgpu',
-    description: 'WebGPU renderer for thorvg-react-native',
-    source: join(libs, 'webgpu'),
-    binaryOnly: true,
-    required: ['ios/wgpu.xcframework/Info.plist', 'VERSION'],
+    required: ['thorvg.xcframework/Info.plist', 'VERSION'],
   },
   {
     name: 'thorvg-react-native-android',
@@ -63,14 +54,6 @@ for (const target of selected) {
   cpSync(target.source, join(directory, 'libs'), { recursive: true });
 
   const files = ['libs'];
-  if (target.binaryOnly) {
-    // Not a native module: keep autolinking from picking it up.
-    writeFileSync(
-      join(directory, 'react-native.config.js'),
-      'module.exports = { dependency: { platforms: { ios: null, android: null } } };\n'
-    );
-    files.push('react-native.config.js');
-  }
 
   const manifest = {
     name: target.name,

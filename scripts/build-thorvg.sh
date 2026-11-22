@@ -11,7 +11,6 @@ LIBS="$ROOT/libs"
 
 ANDROID_API=24
 IOS_MIN=15.1
-WGPU_VERSION=v29.0.1.1
 ANDROID_ABIS=(arm64-v8a armeabi-v7a x86_64 x86)
 IOS_SLICES=(ios-arm64 ios-sim-arm64 ios-sim-x86_64)
 TARGET="${1:-all}"
@@ -136,26 +135,6 @@ api = '$ANDROID_API'" "$simd" "$engines" lottie_exp,opengl_es
   echo "$VERSION" > "$LIBS/android/VERSION"
 }
 
-fetch_wgpu() {
-  local slice="$1" arch="$2"
-  local dir="$BUILD/wgpu/$slice"
-  if [ ! -f "$dir/lib/libwgpu_native.a" ]; then
-    rm -rf "$dir"
-    mkdir -p "$dir"
-    curl -sSfL -o "$dir.zip" \
-      "https://github.com/gfx-rs/wgpu-native/releases/download/$WGPU_VERSION/wgpu-ios-$arch-release.zip"
-    unzip -q "$dir.zip" -d "$dir"
-    rm "$dir.zip"
-  fi
-  cat > "$dir/wgpu_native.pc" <<EOF
-Name: wgpu_native
-Description: wgpu-native
-Version: ${WGPU_VERSION#v}
-Cflags: -I$dir/include
-Libs: -L$dir/lib -lwgpu_native
-EOF
-}
-
 build_ios() {
   local toolchain iphoneos simulator
   toolchain="$(dirname "$(xcrun -f clang)")"
@@ -163,19 +142,14 @@ build_ios() {
   simulator="$(xcrun --sdk iphonesimulator --show-sdk-path)"
 
   for slice in "${IOS_SLICES[@]}"; do
-    local simd=true arch=aarch64
+    local simd=true
     case "$slice" in *x86_64) simd=false ;; esac
-    case "$slice" in
-      ios-sim-arm64) arch=aarch64-simulator ;;
-      ios-sim-x86_64) arch=x86_64-simulator ;;
-    esac
-    echo "  building $slice (cpu,wg,mtl)"
-    fetch_wgpu "$slice" "$arch"
+    echo "  building $slice (cpu,mtl)"
     build_slice "$slice" "[constants]
 toolchain = '$toolchain'
 ios_min = '$IOS_MIN'
 iphoneos_sdk = '$iphoneos'
-simulator_sdk = '$simulator'" "$simd" cpu,wg,mtl lottie_exp -Dpkg_config_path="$BUILD/wgpu/$slice"
+simulator_sdk = '$simulator'" "$simd" cpu,mtl lottie_exp
     strip -S "$BUILD/$slice/libthorvg.a" 2>/dev/null
   done
 
@@ -193,37 +167,6 @@ simulator_sdk = '$simulator'" "$simd" cpu,wg,mtl lottie_exp -Dpkg_config_path="$
     -library "$stage/simulator/libthorvg.a" -headers "$stage/include" \
     -output "$LIBS/ios/thorvg.xcframework" > /dev/null
   echo "$VERSION" > "$LIBS/ios/VERSION"
-
-  # Stands in for wgpu-native when thorvg-react-native-webgpu is not installed, so the
-  # wg engine inside libthorvg links even without dead stripping. Never called: wg stays disabled.
-  local stub="$BUILD/wgpu-stub"
-  rm -rf "$stub"
-  mkdir -p "$stub/simulator"
-  nm -u "$BUILD/ios-arm64/libthorvg.a" | grep -E '^_wgpu' | sort -u | sed -E 's/^_(.*)/void* \1(void) { return 0; }/' > "$stub/stub.c"
-  xcrun --sdk iphoneos clang -c -Os -arch arm64 -miphoneos-version-min="$IOS_MIN" "$stub/stub.c" -o "$stub/device.o"
-  xcrun --sdk iphonesimulator clang -c -Os -arch arm64 -mios-simulator-version-min="$IOS_MIN" "$stub/stub.c" -o "$stub/sim-arm64.o"
-  xcrun --sdk iphonesimulator clang -c -Os -arch x86_64 -mios-simulator-version-min="$IOS_MIN" "$stub/stub.c" -o "$stub/sim-x86_64.o"
-  libtool -static -o "$stub/libwgpu_stub.a" "$stub/device.o" 2>/dev/null
-  libtool -static -o "$stub/simulator/libwgpu_stub.a" "$stub/sim-arm64.o" "$stub/sim-x86_64.o" 2>/dev/null
-  xcodebuild -create-xcframework \
-    -library "$stub/libwgpu_stub.a" \
-    -library "$stub/simulator/libwgpu_stub.a" \
-    -output "$LIBS/ios/wgpu-stub.xcframework" > /dev/null
-
-  # wgpu-native is linked only when thorvg-react-native-webgpu is installed.
-  local wgpu="$BUILD/wgpu-stage"
-  rm -rf "$wgpu"
-  mkdir -p "$wgpu/simulator" "$wgpu/include"
-  lipo -create "$BUILD/wgpu/ios-sim-arm64/lib/libwgpu_native.a" "$BUILD/wgpu/ios-sim-x86_64/lib/libwgpu_native.a" -output "$wgpu/simulator/libwgpu_native.a"
-  cp -R "$BUILD/wgpu/ios-arm64/include/webgpu" "$wgpu/include/"
-
-  rm -rf "$LIBS/webgpu/ios"
-  mkdir -p "$LIBS/webgpu/ios"
-  xcodebuild -create-xcframework \
-    -library "$BUILD/wgpu/ios-arm64/lib/libwgpu_native.a" -headers "$wgpu/include" \
-    -library "$wgpu/simulator/libwgpu_native.a" -headers "$wgpu/include" \
-    -output "$LIBS/webgpu/ios/wgpu.xcframework" > /dev/null
-  echo "$VERSION" > "$LIBS/webgpu/VERSION"
 }
 
 case "$TARGET" in android|ios|all|source) ;; *) echo "Usage: $0 [android|ios|all|source]" >&2; exit 1 ;; esac

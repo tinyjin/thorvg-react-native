@@ -7,7 +7,7 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const libs = join(root, 'libs');
 
 const required = {
-  ios: ['thorvg.xcframework/Info.plist', 'wgpu-stub.xcframework/Info.plist', 'VERSION'],
+  ios: ['thorvg.xcframework/Info.plist', 'VERSION'],
   android: [
     'include/thorvg_capi.h',
     'arm64-v8a/libthorvg.a',

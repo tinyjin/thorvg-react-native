@@ -17,7 +17,7 @@
 
 namespace thorvg::rn {
 
-enum class Renderer { Sw, Gl, Wg, Mtl, Vk };
+enum class Renderer { Sw, Gl, Mtl, Vk };
 
 const char* rendererName(Renderer renderer);
 Renderer rendererFromName(const std::string& name);

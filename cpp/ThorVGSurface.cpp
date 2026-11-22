@@ -103,8 +103,6 @@ const char* rendererName(Renderer renderer) {
   switch (renderer) {
     case Renderer::Gl:
       return "gl";
-    case Renderer::Wg:
-      return "wg";
     case Renderer::Mtl:
       return "mtl";
     case Renderer::Vk:
@@ -116,7 +114,6 @@ const char* rendererName(Renderer renderer) {
 
 Renderer rendererFromName(const std::string& name) {
   if (name == "gl") return Renderer::Gl;
-  if (name == "wg") return Renderer::Wg;
   if (name == "mtl") return Renderer::Mtl;
   if (name == "vk") return Renderer::Vk;
   return Renderer::Sw;
