@@ -1,0 +1,186 @@
+name: Release GPU
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to publish, e.g. 0.1.2-gpu.3. Leave empty for the next gpu number.'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-gpu
+  cancel-in-progress: false
+
+env:
+  BRANCH: gpu
+  PACKAGE: thorvg-react-native
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      sha: ${{ steps.version.outputs.sha }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.BRANCH }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+
+      - name: Resolve the version
+        id: version
+        env:
+          REQUESTED: ${{ inputs.version }}
+        run: |
+          registry() { (cd "$RUNNER_TEMP" && npm "$@"); }
+          base="$(node -p 'require("./package.json").version')"
+          published="$(registry view "$PACKAGE" versions --json)"
+          version="$REQUESTED"
+          if [ -z "$version" ]; then
+            last="$(node -e '
+              const [base, list] = process.argv.slice(1);
+              const prefix = `${base}-gpu.`;
+              const numbers = [].concat(JSON.parse(list))
+                .filter((v) => v.startsWith(prefix))
+                .map((v) => Number(v.slice(prefix.length)))
+                .filter(Number.isInteger);
+              console.log(numbers.length ? Math.max(...numbers) : 0);
+            ' "$base" "$published")"
+            version="$base-gpu.$((last + 1))"
+          fi
+          if ! [[ "$version" =~ ^${base//./\\.}-gpu\.[0-9]+$ ]]; then
+            echo "$version does not match ${base}-gpu.<n> (package.json on $BRANCH is $base)" >&2
+            exit 1
+          fi
+          if node -e 'process.exit([].concat(JSON.parse(process.argv[1])).includes(process.argv[2]) ? 0 : 1)' "$published" "$version"; then
+            echo "$PACKAGE@$version is already published" >&2
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          echo "Publishing $PACKAGE@$version from $BRANCH@$(git rev-parse --short HEAD)"
+
+  build-android:
+    needs: verify
+    runs-on: ubuntu-latest
+
+    env:
+      NDK_VERSION: 29.0.14206865
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.verify.outputs.sha }}
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Install Android NDK
+        run: |
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "ndk;$NDK_VERSION" > /dev/null
+          test -f "$ANDROID_HOME/ndk/$NDK_VERSION/source.properties"
+          echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/$NDK_VERSION" >> "$GITHUB_ENV"
+
+      - name: Build ThorVG for Android
+        run: |
+          pip install meson ninja
+          ./scripts/build-thorvg.sh android
+
+      - name: Upload binaries
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: libs-android
+          path: libs/android
+          if-no-files-found: error
+
+  build-ios:
+    needs: verify
+    runs-on: macos-latest
+
+    env:
+      XCODE_VERSION: 26
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.verify.outputs.sha }}
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Use appropriate Xcode version
+        uses: maxim-lobanov/setup-xcode@ed7a3b1fda3918c0306d1b724322adc0b8cc0a90 # v1.7.0
+        with:
+          xcode-version: ${{ env.XCODE_VERSION }}
+
+      - name: Build ThorVG for iOS
+        run: |
+          pip3 install --break-system-packages meson ninja
+          ./scripts/build-thorvg.sh ios
+
+      - name: Upload binaries
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: libs-ios
+          path: libs/ios
+          if-no-files-found: error
+
+  publish:
+    needs: [verify, build-android, build-ios]
+    runs-on: ubuntu-latest
+    environment: npm
+    permissions:
+      contents: read
+      id-token: write
+
+    env:
+      VERSION: ${{ needs.verify.outputs.version }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.verify.outputs.sha }}
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Setup
+        uses: ./.github/actions/setup
+
+      - name: Download Android binaries
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: libs-android
+          path: libs/android
+
+      - name: Download iOS binaries
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: libs-ios
+          path: libs/ios
+
+      - name: Add ThorVG license
+        run: cp thorvg/LICENSE libs/LICENSE
+
+      - name: Set the version
+        run: |
+          node -e '
+            const fs = require("fs");
+            const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
+            pkg.version = process.argv[1];
+            fs.writeFileSync("package.json", JSON.stringify(pkg, null, 2) + "\n");
+          ' "$VERSION"
+
+      - name: Publish to npm
+        run: yarn npm publish --access public --provenance --tag gpu
