@@ -34,9 +34,10 @@
     <rect x="223" y="340" width="308" height="80"/>
     <rect x="539" y="340" width="308" height="80"/>
     <rect x="223" y="476" width="624" height="80"/>
-    <rect x="223" y="612" width="202" height="80"/>
-    <rect x="434" y="612" width="203" height="80"/>
-    <rect x="646" y="612" width="201" height="80"/>
+    <rect x="223" y="612" width="150" height="80"/>
+    <rect x="381" y="612" width="150" height="80"/>
+    <rect x="539" y="612" width="150" height="80"/>
+    <rect x="697" y="612" width="150" height="80"/>
     <rect x="223" y="748" width="202" height="80"/>
     <rect x="434" y="748" width="203" height="80"/>
     <rect x="646" y="748" width="201" height="80"/>
@@ -63,11 +64,13 @@
     <text x="535" y="253" font-size="24">WebCanvas API</text>
     <text x="535" y="526" font-size="28">ThorVG Engine</text>
 
-    <text x="324" y="660" font-size="24">CPU</text>
-    <text x="535" y="646" font-size="22">OpenGL ES</text>
-    <text x="535" y="674" font-size="22">WebGL</text>
-    <text x="746" y="646" font-size="22">WebGPU</text>
-    <text x="746" y="674" font-size="16" font-weight="500">Metal · Browser</text>
+    <text x="298" y="660" font-size="24">CPU</text>
+    <text x="456" y="646" font-size="22">OpenGL ES</text>
+    <text x="456" y="674" font-size="22">WebGL</text>
+    <text x="614" y="646" font-size="22">Metal</text>
+    <text x="614" y="674" font-size="22">Vulkan</text>
+    <text x="772" y="646" font-size="22">WebGPU</text>
+    <text x="772" y="674" font-size="16" font-weight="500">Browser</text>
 
     <text x="324" y="780" font-size="22">Android</text>
     <text x="324" y="808" font-size="15" font-weight="500">TextureView · SurfaceView</text>

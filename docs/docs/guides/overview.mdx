@@ -15,8 +15,8 @@ The package runs the [`@thorvg/webcanvas`](https://www.npmjs.com/package/@thorvg
 | Interface | The WebCanvas API. `Shape`, `Scene`, `Picture`, `Text`, `LottieAnimation` and the other classes have the same methods on every platform |
 | Bindings | On Android and iOS, the classes call the ThorVG C API through JSI. On web, they are WebCanvas itself, running ThorVG as WebAssembly |
 | Engine | ThorVG, which builds the scene and renders it |
-| Render backends | The engine renders with the CPU (`'sw'`), OpenGL ES or WebGL (`'gl'`), or WebGPU (`'wg'`, Metal on iOS) |
-| Surfaces | The result is shown in a `TextureView` or `SurfaceView` on Android, a `CALayer` (`'sw'`) or `CAMetalLayer` (`'wg'`) on iOS and a `<canvas>` element on web |
+| Render backends | The engine renders with the CPU (`'sw'`), OpenGL ES or WebGL (`'gl'`), Metal (`'mtl'`, iOS), Vulkan (`'vk'`, Android) or WebGPU (`'wg'`, web) |
+| Surfaces | The result is shown in a `TextureView` or `SurfaceView` on Android, a `CALayer` (`'sw'`) or `CAMetalLayer` (`'mtl'`) on iOS and a `<canvas>` element on web |
 
 ## Native
 
@@ -30,8 +30,8 @@ On web, the package uses `@thorvg/webcanvas` directly. `new TVG.Canvas(view)` cr
 
 | Platform | Renderers | Default |
 | --- | --- | --- |
-| Android | `'gl'`, `'sw'` | `'gl'` |
-| iOS | `'sw'`, `'wg'` (experimental) | `'sw'` |
+| Android | `'gl'`, `'vk'` (experimental), `'sw'` | `'gl'` |
+| iOS | `'sw'`, `'mtl'` (experimental) | `'sw'` |
 | Web | `'gl'`, `'wg'`, `'sw'` | `'gl'` |
 
 Choose one with `init({ renderer })` or `useThorVG({ renderer })`. See [Platforms](../platforms) for details.

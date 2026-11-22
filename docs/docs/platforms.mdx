@@ -7,15 +7,47 @@ sidebar_position: 4
 
 Canvases render into a `TextureView` by default. `androidBackingView="SurfaceView"` draws into a `SurfaceView` instead.
 
-Android supports `'gl'` (OpenGL ES, the default) and `'sw'`. Other renderers fall back to `'sw'`.
+Android supports `'gl'` (OpenGL ES, the default), `'vk'` (Vulkan, experimental) and `'sw'`. Other renderers fall back to `'sw'`.
+
+`'vk'` is built for the 64-bit ABIs (`arm64-v8a` and `x86_64`). On 32-bit ABIs, and on devices without a usable Vulkan driver, it falls back to `'sw'`.
 
 ## iOS
 
 Run `pod install` in your `ios` directory after installing the package.
 
-iOS supports `'sw'` (the default) and `'wg'` (WebGPU on Metal, experimental). Other renderers fall back to `'sw'`.
+iOS supports `'sw'` (the default) and `'mtl'` (Metal, experimental). Other renderers fall back to `'sw'`.
 
-### WebGPU Support
+`'mtl'` draws into the view's `CAMetalLayer`.
+
+## GPU Engines
+
+`'mtl'` and `'vk'` come from experimental ThorVG backends that are not part of a ThorVG release yet. The `gpu` branch builds them into the engine:
+
+```sh
+git clone --recursive -b gpu https://github.com/tinyjin/thorvg-react-native.git
+cd thorvg-react-native && yarn
+yarn build:thorvg
+yarn pack
+```
+
+Install the packed archive in your app and run `pod install`. Select a renderer with `useThorVG({ renderer: 'mtl' })` on iOS or `useThorVG({ renderer: 'vk' })` on Android.
+
+`yarn build:thorvg` starts from the ThorVG release in the `thorvg` submodule and cherry-picks the backend commits pinned in `native/thorvg-gpu.txt`:
+
+| Line | Meaning |
+| --- | --- |
+| `metal https://github.com/tinyjin/thorvg.git jinny/metal-engine <commit>` | Metal backend, built for iOS |
+| `vulkan https://github.com/tinyjin/thorvg.git jinny/vulkan-engine <commit>` | Vulkan backend, built for Android |
+
+To update a backend, change its commit and run `yarn build:thorvg` again. Both backends edit the same build options and engine registration, and `native/thorvg-rerere` records how those edits are combined, so known conflicts resolve without help. A conflict it has not seen stops the build. Resolve it in `build/thorvg/source`, run `git add` and `git cherry-pick --continue` there, run `yarn build:thorvg` again, and commit the new files in `native/thorvg-rerere`.
+
+| Platform | Engines in the build |
+| --- | --- |
+| iOS | `sw`, `mtl` |
+| Android `arm64-v8a`, `x86_64` | `sw`, `gl`, `vk` |
+| Android `armeabi-v7a`, `x86` | `sw`, `gl` |
+
+## WebGPU Support
 
 `'wg'` is experimental and not included in the published package. Build it from the repository:
 
